@@ -1,0 +1,397 @@
+---
+const description = "Sign up or log in to AI Fanfiction Generator";
+const title = "Join the Guild - AI Fanfiction";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Google Fonts: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script is:inline>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                bg: '#12101D',
+                text: '#EAE6F8',
+              },
+              secondary: {
+                bg: 'rgba(28, 25, 41, 0.75)',
+                text: '#A09CB8',
+              },
+              border: '#3A3651',
+              danger: '#E05A5A',
+              success: '#5AE08A'
+            },
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <style is:global>
+      /* Global Styles */
+      body {
+        background-color: #12101D;
+        color: #EAE6F8;
+        font-family: 'Manrope', sans-serif;
+        line-height: 1.7;
+        overflow-x: hidden;
+        margin: 0;
+      }
+
+      /* Gradient Text */
+      .text-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+      }
+
+      /* Primary Button */
+      .btn-primary {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 700;
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+
+      /* Shimmer Loading Animation */
+      .btn-primary.is-loading {
+        pointer-events: none;
+        color: transparent !important;
+      }
+      .btn-primary.is-loading::after {
+        content: "";
+        position: absolute;
+        top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 1s infinite;
+      }
+      @keyframes shimmer {
+        100% { left: 200%; }
+      }
+
+      /* Secondary Button (Google Login) */
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid #3A3651;
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 500;
+      }
+      .btn-secondary:hover {
+        border-color: #8A2BE2;
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+        color: #fff;
+      }
+
+      /* Glassmorphism Card */
+      .glass-card {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid #3A3651;
+        border-radius: 12px;
+      }
+
+      /* Input Field Focus Glow */
+      .input-field {
+        background: rgba(18, 16, 29, 0.6);
+        border: 1px solid #3A3651;
+        color: #EAE6F8;
+        transition: all 0.2s ease-out;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #8A2BE2;
+        box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.25), 0 0 15px rgba(138, 43, 226, 0.15);
+      }
+
+      /* Nebula Background Animation */
+      .nebula-container {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        overflow: hidden;
+        z-index: -1;
+        background: #12101D;
+      }
+      .nebula-blob {
+        position: absolute;
+        filter: blur(90px);
+        opacity: 0.5;
+        animation: swirl 20s infinite linear alternate;
+      }
+      .blob-1 {
+        width: 600px; height: 600px;
+        background: #2a0845;
+        top: -100px; left: -100px;
+      }
+      .blob-2 {
+        width: 500px; height: 500px;
+        background: #0f1c4d;
+        bottom: -100px; right: -50px;
+        animation-delay: -5s;
+      }
+      @keyframes swirl {
+        0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        100% { transform: translate(100px, 50px) rotate(10deg) scale(1.1); }
+      }
+
+      .stars {
+        position: absolute;
+        width: 100%; height: 100%;
+        background-image: radial-gradient(2px 2px at 20px 30px, #EAE6F8, rgba(0,0,0,0)), radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), rgba(0,0,0,0)), radial-gradient(2px 2px at 50px 160px, rgba(255,255,255,0.5), rgba(0,0,0,0));
+        background-repeat: repeat;
+        background-size: 200px 200px;
+        animation: drift 100s linear infinite;
+        opacity: 0.3;
+      }
+      @keyframes drift {
+        from { transform: translateY(0); }
+        to { transform: translateY(-1000px); }
+      }
+
+      /* View Transition Animation */
+      .view-section {
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+      }
+      .view-hidden {
+        opacity: 0;
+        pointer-events: none;
+        position: absolute;
+        transform: translateY(10px);
+      }
+      .view-active {
+        opacity: 1;
+        pointer-events: auto;
+        position: relative;
+        transform: translateY(0);
+      }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Animated Nebula Background -->
+    <div class="nebula-container">
+      <div class="nebula-blob blob-1"></div>
+      <div class="nebula-blob blob-2"></div>
+      <div class="stars"></div>
+    </div>
+
+    <!-- Main Card Container (max-width: 420px, 40px internal padding) -->
+    <div class="glass-card w-full max-w-[420px] p-8 sm:p-10 relative z-10 overflow-hidden">
+
+      <!-- LOGIN VIEW -->
+      <div id="view-login" class="view-section view-active">
+        <!-- Logo & Title -->
+        <div class="text-center mb-8">
+          <div class="flex justify-center mb-3">
+            <div class="w-12 h-12 rounded-xl bg-[rgba(138,43,226,0.1)] border border-[rgba(138,43,226,0.3)] flex items-center justify-center shadow-[0_0_15px_rgba(138,43,226,0.4)]">
+              <i data-lucide="feather" class="w-6 h-6 text-[#EAE6F8]"></i>
+            </div>
+          </div>
+          <h1 class="font-bold text-xl tracking-wide mb-1">AI Fanfiction</h1>
+        </div>
+
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold mb-1">Welcome Back, Creator.</h2>
+          <p class="text-[#A09CB8] text-sm">Continue your story.</p>
+        </div>
+
+        <form onsubmit="handleAuth(event, 'login')">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-[#A09CB8] mb-1.5">Email Address</label>
+              <input type="email" required class="input-field w-full rounded-lg px-4 py-3 text-sm placeholder:text-[#3A3651]" placeholder="author@guild.com">
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label class="block text-sm font-medium text-[#A09CB8]">Password</label>
+                <a href="#" class="text-xs text-[#A09CB8] hover:text-[#8A2BE2] transition-colors">Forgot your password?</a>
+              </div>
+              <div class="relative">
+                <input type="password" id="login-password" required class="input-field w-full rounded-lg px-4 py-3 text-sm placeholder:text-[#3A3651]" placeholder="••••••••">
+                <button type="button" onclick="togglePassword('login-password', 'eye-icon-login')" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">
+                  <i id="eye-icon-login" data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-login" class="btn-primary w-full py-3 rounded-lg mt-6 flex justify-center items-center">
+            <span>Log In</span>
+          </button>
+        </form>
+
+        <div class="flex items-center my-6">
+          <div class="flex-1 border-t border-[#3A3651]"></div>
+          <span class="px-4 text-xs font-medium text-[#A09CB8] uppercase tracking-wider">or</span>
+          <div class="flex-1 border-t border-[#3A3651]"></div>
+        </div>
+
+        <button class="btn-secondary w-full py-3 rounded-lg flex items-center justify-center gap-3">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="mt-8 text-center">
+          <p class="text-sm text-[#A09CB8]">
+            New here?
+            <button onclick="switchView('register')" class="text-[#EAE6F8] hover:text-[#8A2BE2] font-semibold transition-colors">Create your account →</button>
+          </p>
+        </div>
+      </div>
+
+      <!-- REGISTER VIEW -->
+      <div id="view-register" class="view-section view-hidden">
+        <!-- Logo Mini -->
+        <div class="flex justify-center mb-6">
+          <i data-lucide="feather" class="w-8 h-8 text-[#8A2BE2] drop-shadow-[0_0_8px_rgba(138,43,226,0.6)]"></i>
+        </div>
+
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold mb-1">Join the Guild.</h2>
+          <p class="text-[#A09CB8] text-sm">Your story starts here.</p>
+        </div>
+
+        <form onsubmit="handleAuth(event, 'register')">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-[#A09CB8] mb-1.5">Username</label>
+              <input type="text" required class="input-field w-full rounded-lg px-4 py-3 text-sm placeholder:text-[#3A3651]" placeholder="HeroName">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-[#A09CB8] mb-1.5">Email Address</label>
+              <input type="email" required class="input-field w-full rounded-lg px-4 py-3 text-sm placeholder:text-[#3A3651]" placeholder="author@guild.com">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-[#A09CB8] mb-1.5">Password</label>
+              <div class="relative">
+                <input type="password" id="reg-password" required class="input-field w-full rounded-lg px-4 py-3 text-sm placeholder:text-[#3A3651]" placeholder="••••••••">
+                <button type="button" onclick="togglePassword('reg-password', 'eye-icon-reg')" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">
+                  <i id="eye-icon-reg" data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-register" class="btn-primary w-full py-3 rounded-lg mt-6 flex justify-center items-center">
+            <span>Create My Account</span>
+          </button>
+        </form>
+
+        <p class="mt-4 text-center text-xs text-[#A09CB8] leading-relaxed">
+          By signing up, you agree to our <a href="#" class="underline hover:text-[#EAE6F8]">Terms of Service</a>.
+        </p>
+
+        <div class="mt-8 text-center">
+          <p class="text-sm text-[#A09CB8]">
+            Already a member?
+            <button onclick="switchView('login')" class="text-[#EAE6F8] hover:text-[#8A2BE2] font-semibold transition-colors">Log in →</button>
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Interactive Scripts -->
+    <script is:inline>
+      // Initialize icons
+      lucide.createIcons();
+
+      // Switch Login/Register View
+      function switchView(target) {
+        const loginView = document.getElementById('view-login');
+        const registerView = document.getElementById('view-register');
+
+        if (target === 'register') {
+          loginView.classList.remove('view-active');
+          loginView.classList.add('view-hidden');
+
+          setTimeout(() => {
+            registerView.classList.remove('view-hidden');
+            registerView.classList.add('view-active');
+          }, 150);
+        } else {
+          registerView.classList.remove('view-active');
+          registerView.classList.add('view-hidden');
+
+          setTimeout(() => {
+            loginView.classList.remove('view-hidden');
+            loginView.classList.add('view-active');
+          }, 150);
+        }
+      }
+
+      // Toggle Password Visibility
+      function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+          input.type = 'password';
+          icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+      }
+
+      // Simulate Auth Submission with Shimmer Animation
+      function handleAuth(event, type) {
+        event.preventDefault();
+        const btnId = type === 'login' ? 'btn-login' : 'btn-register';
+        const btn = document.getElementById(btnId);
+        const originalHtml = btn.innerHTML;
+
+        btn.classList.add('is-loading');
+
+        setTimeout(() => {
+          btn.classList.remove('is-loading');
+          btn.innerHTML = `<i data-lucide="check" class="w-5 h-5 mr-2"></i> ${type === 'login' ? 'Success' : 'Account Created'}`;
+          lucide.createIcons();
+
+          setTimeout(() => {
+            btn.innerHTML = originalHtml;
+          }, 2000);
+        }, 1500);
+      }
+    </script>
+  </body>
+</html>

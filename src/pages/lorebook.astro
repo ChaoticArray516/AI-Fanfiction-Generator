@@ -1,0 +1,464 @@
+---
+const description = "Lorebook - AI Fanfiction Generator";
+const title = "Lorebook - AI Fanfiction";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Google Fonts: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script is:inline>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                bg: '#12101D',
+                text: '#EAE6F8',
+              },
+              secondary: {
+                bg: 'rgba(28, 25, 41, 0.75)',
+                text: '#A09CB8',
+              },
+              border: '#3A3651',
+              danger: '#E05A5A',
+              success: '#5AE08A'
+            },
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <style is:global>
+      /* Global Styles */
+      body {
+        background-color: #12101D;
+        color: #EAE6F8;
+        font-family: 'Manrope', sans-serif;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3A3651;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #8A2BE2;
+      }
+
+      /* Gradient Text */
+      .text-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+      }
+
+      /* Primary Button */
+      .btn-primary {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+
+      /* Input Field Glow */
+      .input-field {
+        background: rgba(18, 16, 29, 0.6);
+        border: 1px solid #3A3651;
+        color: #EAE6F8;
+        transition: all 0.2s ease-out;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #8A2BE2;
+        box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.25);
+      }
+
+      /* Ghost Input Focus */
+      .input-ghost:focus {
+        outline: none;
+        box-shadow: none;
+      }
+
+      /* Left Entry Active Indicator */
+      .entry-item {
+        position: relative;
+        transition: all 0.2s ease-out;
+      }
+      .entry-item.active {
+        color: #EAE6F8;
+        background: linear-gradient(90deg, rgba(138,43,226,0.1) 0%, transparent 100%);
+      }
+      .entry-item.active .entry-icon {
+        color: #8A2BE2;
+      }
+      .entry-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0; width: 3px;
+        background: linear-gradient(180deg, #8A2BE2, #4A00E0);
+        box-shadow: 0 0 8px rgba(138,43,226,0.6);
+        border-radius: 0 2px 2px 0;
+      }
+
+      /* Category Collapse Transition */
+      .category-content {
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+      .category-header[aria-expanded="false"] .category-icon {
+        transform: rotate(-90deg);
+      }
+
+      /* Glassmorphism Panel */
+      .glass-panel {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid #3A3651;
+      }
+
+      /* Dashed Upload Area */
+      .upload-area {
+        background: repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 10px,
+          rgba(58, 54, 81, 0.2) 10px,
+          rgba(58, 54, 81, 0.2) 20px
+        );
+        transition: all 0.2s ease;
+      }
+      .upload-area:hover {
+        border-color: #8A2BE2;
+        background-color: rgba(138, 43, 226, 0.05);
+      }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body class="flex h-screen w-full text-[#EAE6F8] bg-[#12101D]">
+
+    <!-- LEFT COLUMN (ENTRY LIST) -->
+    <aside class="w-[280px] flex-shrink-0 border-r border-[#3A3651] flex flex-col h-full bg-[#12101D] z-10 relative">
+
+      <!-- Header -->
+      <div class="px-5 pt-6 pb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="font-extrabold text-xl tracking-wide flex items-center gap-2">
+            <i data-lucide="book-marked" class="w-5 h-5 text-[#8A2BE2]"></i> Lorebook
+          </h1>
+          <button class="btn-primary w-8 h-8 rounded flex items-center justify-center hover:scale-105 transition-transform" title="New Entry">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Search -->
+        <div class="relative w-full">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09CB8]"></i>
+          <input type="text" placeholder="Search entries..." class="input-field w-full pl-9 pr-3 py-2 rounded-lg text-sm placeholder:text-[#3A3651]">
+        </div>
+      </div>
+
+      <!-- Entry List (Scrollable) -->
+      <div class="flex-1 overflow-y-auto px-3 pb-6 flex flex-col gap-2">
+
+        <!-- Group: Characters -->
+        <div>
+          <button class="category-header w-full flex items-center justify-between px-2 py-2 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-expanded="true" onclick="toggleCategory('cat-characters', this)">
+            <span class="text-xs font-bold uppercase tracking-wider">Characters</span>
+            <i data-lucide="chevron-down" class="category-icon w-4 h-4 transition-transform duration-200"></i>
+          </button>
+          <div id="cat-characters" class="category-content flex flex-col" style="max-height: 500px;">
+            <!-- Active Entry -->
+            <div class="entry-item active group flex items-center justify-between px-3 py-2 rounded-r-md cursor-pointer" onclick="showEditor()">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex-shrink-0 border border-[#3A3651]"></div>
+                <span class="text-sm font-medium truncate">Elara Vance</span>
+              </div>
+              <i data-lucide="edit-2" class="w-3.5 h-3.5 text-[#A09CB8] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#EAE6F8] flex-shrink-0"></i>
+            </div>
+
+            <div class="entry-item group flex items-center justify-between px-3 py-2 rounded-r-md cursor-pointer hover:bg-[rgba(255,255,255,0.03)]" onclick="showEmpty()">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-slate-600 to-slate-800 flex-shrink-0 border border-[#3A3651]"></div>
+                <span class="text-sm font-medium text-[#A09CB8] group-hover:text-[#EAE6F8] truncate transition-colors">Kaelen Darkweaver</span>
+              </div>
+              <i data-lucide="edit-2" class="w-3.5 h-3.5 text-[#A09CB8] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#EAE6F8] flex-shrink-0"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group: Locations -->
+        <div>
+          <button class="category-header w-full flex items-center justify-between px-2 py-2 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors mt-2" aria-expanded="true" onclick="toggleCategory('cat-locations', this)">
+            <span class="text-xs font-bold uppercase tracking-wider">Locations</span>
+            <i data-lucide="chevron-down" class="category-icon w-4 h-4 transition-transform duration-200"></i>
+          </button>
+          <div id="cat-locations" class="category-content flex flex-col" style="max-height: 500px;">
+            <div class="entry-item group flex items-center justify-between px-3 py-2 rounded-r-md cursor-pointer hover:bg-[rgba(255,255,255,0.03)]" onclick="showEmpty()">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-6 h-6 rounded bg-[#1C1929] flex items-center justify-center flex-shrink-0 border border-[#3A3651] text-emerald-400">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="text-sm font-medium text-[#A09CB8] group-hover:text-[#EAE6F8] truncate transition-colors">The Citadel of Glass</span>
+              </div>
+              <i data-lucide="edit-2" class="w-3.5 h-3.5 text-[#A09CB8] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#EAE6F8] flex-shrink-0"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group: Items -->
+        <div>
+          <button class="category-header w-full flex items-center justify-between px-2 py-2 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors mt-2" aria-expanded="true" onclick="toggleCategory('cat-items', this)">
+            <span class="text-xs font-bold uppercase tracking-wider">Items</span>
+            <i data-lucide="chevron-down" class="category-icon w-4 h-4 transition-transform duration-200"></i>
+          </button>
+          <div id="cat-items" class="category-content flex flex-col" style="max-height: 500px;">
+            <div class="entry-item group flex items-center justify-between px-3 py-2 rounded-r-md cursor-pointer hover:bg-[rgba(255,255,255,0.03)]" onclick="showEmpty()">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-6 h-6 rounded bg-[#1C1929] flex items-center justify-center flex-shrink-0 border border-[#3A3651] text-amber-400">
+                  <i data-lucide="sword" class="w-3.5 h-3.5"></i>
+                </div>
+                <span class="text-sm font-medium text-[#A09CB8] group-hover:text-[#EAE6F8] truncate transition-colors">Obsidian Codex</span>
+              </div>
+              <i data-lucide="edit-2" class="w-3.5 h-3.5 text-[#A09CB8] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#EAE6F8] flex-shrink-0"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN (ENTRY EDITOR & EMPTY STATE) -->
+    <main class="flex-1 flex flex-col relative bg-[#12101D] overflow-hidden h-full">
+
+      <!-- EMPTY STATE -->
+      <div id="empty-state" class="hidden absolute inset-0 flex flex-col items-center justify-center p-8 z-0">
+        <div class="relative w-32 h-32 mb-8 flex items-center justify-center">
+          <!-- Decorative elements -->
+          <div class="absolute inset-0 bg-[#8A2BE2] opacity-10 rounded-full blur-2xl"></div>
+          <i data-lucide="book-open" class="w-16 h-16 text-[#3A3651] absolute"></i>
+          <i data-lucide="feather" class="w-10 h-10 text-[#8A2BE2] absolute -ml-6 -mt-6 animate-pulse"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Lorebook Archive</h3>
+        <p class="text-[#A09CB8] mb-8 text-center max-w-sm">Select an entry from the left to view or edit its details, or create a new one to expand your world.</p>
+        <button class="btn-primary px-6 py-3 rounded-xl flex items-center justify-center gap-2">
+          <i data-lucide="plus" class="w-5 h-5"></i>
+          Create New Entry
+        </button>
+      </div>
+
+      <!-- ENTRY EDITOR STATE -->
+      <div id="editor-state" class="flex flex-col h-full z-10 bg-[#12101D]">
+
+        <!-- Scrollable Editor Content -->
+        <div class="flex-1 overflow-y-auto px-8 md:px-16 py-10 pb-32">
+          <div class="max-w-4xl mx-auto">
+
+            <!-- Top Badge -->
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[rgba(138,43,226,0.1)] border border-[rgba(138,43,226,0.3)] text-[#d4b3ff] text-xs font-bold tracking-wide uppercase mb-6">
+              <i data-lucide="user" class="w-3.5 h-3.5"></i>
+              Character
+            </div>
+
+            <!-- Entry Name Input -->
+            <input type="text" value="Elara Vance" class="input-ghost w-full bg-transparent text-4xl md:text-5xl font-extrabold text-[#EAE6F8] mb-8 placeholder:text-[#3A3651] border-b border-transparent focus:border-[#8A2BE2] pb-2 transition-colors" placeholder="Entry Name">
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+              <!-- Left Sub-column (Image & Attributes) -->
+              <div class="lg:col-span-1 flex flex-col gap-8">
+
+                <!-- Image Upload Area -->
+                <div class="upload-area w-full aspect-[3/4] rounded-xl border-2 border-dashed border-[#3A3651] flex flex-col items-center justify-center p-6 text-center cursor-pointer group">
+                  <div class="w-12 h-12 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i data-lucide="image-plus" class="w-6 h-6 text-[#A09CB8] group-hover:text-[#8A2BE2] transition-colors"></i>
+                  </div>
+                  <span class="text-sm font-bold text-[#A09CB8] group-hover:text-[#EAE6F8] transition-colors">Upload Cover Image</span>
+                  <span class="text-xs text-[#3A3651] mt-2">or Generate with AI</span>
+                </div>
+
+                <!-- Key Attributes -->
+                <div>
+                  <h3 class="text-sm font-bold text-[#EAE6F8] mb-4 uppercase tracking-wider flex items-center justify-between">
+                    Key Attributes
+                    <button class="text-xs text-[#8A2BE2] hover:text-[#d4b3ff] font-medium transition-colors flex items-center gap-1">
+                      <i data-lucide="plus" class="w-3 h-3"></i> Add
+                    </button>
+                  </h3>
+
+                  <div class="flex flex-col gap-3" id="attributes-list">
+                    <!-- Row 1 -->
+                    <div class="flex items-center gap-2 group">
+                      <input type="text" value="Alias" class="input-field w-1/3 rounded p-2 text-xs font-medium text-[#A09CB8]" placeholder="Key">
+                      <input type="text" value="The Shadow Weaver" class="input-field flex-1 rounded p-2 text-sm text-[#EAE6F8]" placeholder="Value">
+                      <button class="w-6 h-6 flex items-center justify-center text-[#3A3651] hover:text-[#E05A5A] opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                    <!-- Row 2 -->
+                    <div class="flex items-center gap-2 group">
+                      <input type="text" value="Race" class="input-field w-1/3 rounded p-2 text-xs font-medium text-[#A09CB8]" placeholder="Key">
+                      <input type="text" value="Human (Mage)" class="input-field flex-1 rounded p-2 text-sm text-[#EAE6F8]" placeholder="Value">
+                      <button class="w-6 h-6 flex items-center justify-center text-[#3A3651] hover:text-[#E05A5A] opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                    <!-- Row 3 -->
+                    <div class="flex items-center gap-2 group">
+                      <input type="text" value="Affiliation" class="input-field w-1/3 rounded p-2 text-xs font-medium text-[#A09CB8]" placeholder="Key">
+                      <input type="text" value="The Crimson Order" class="input-field flex-1 rounded p-2 text-sm text-[#EAE6F8]" placeholder="Value">
+                      <button class="w-6 h-6 flex items-center justify-center text-[#3A3651] hover:text-[#E05A5A] opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Right Sub-column (Description Rich Text) -->
+              <div class="lg:col-span-2 flex flex-col h-full min-h-[500px]">
+                <h3 class="text-sm font-bold text-[#EAE6F8] mb-4 uppercase tracking-wider">Description & Backstory</h3>
+
+                <!-- Rich Text Editor Container -->
+                <div class="glass-panel rounded-xl flex-1 flex flex-col overflow-hidden">
+                  <!-- Toolbar -->
+                  <div class="h-12 border-b border-[#3A3651] bg-[rgba(18,16,29,0.5)] flex items-center px-2 gap-1 flex-wrap">
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" title="Bold"><i data-lucide="bold" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" title="Italic"><i data-lucide="italic" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" title="Underline"><i data-lucide="underline" class="w-4 h-4"></i></button>
+                    <div class="w-px h-4 bg-[#3A3651] mx-1"></div>
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" title="Heading"><i data-lucide="heading" class="w-4 h-4"></i></button>
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" title="List"><i data-lucide="list" class="w-4 h-4"></i></button>
+                    <div class="w-px h-4 bg-[#3A3651] mx-1"></div>
+                    <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.05)] text-[#A09CB8] hover:text-[#8A2BE2] transition-colors ml-auto flex items-center gap-1.5 px-2 font-medium text-xs">
+                      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Ask AI
+                    </button>
+                  </div>
+                  <!-- Content Area -->
+                  <div contenteditable="true" class="flex-1 p-5 outline-none text-[#EAE6F8] leading-relaxed font-sans" style="font-size: 15px;">
+                    <p class="mb-4">Elara was born in the lower districts of the Glass City, discovering her innate ability to manipulate shadow-weave at a dangerously young age. Unlike traditional elemental magic, her powers draw directly from the Void, making her a target for the Council's inquisitors.</p>
+                    <p class="mb-4">She possesses a cynical exterior, born of years living on the run, but holds a fierce loyalty to those few she trusts. Her ultimate goal is to uncover the truth behind the Great Sundering that fractured the magical leylines a century ago.</p>
+                    <br>
+                    <h4 style="font-size: 1.1em; font-weight: bold; margin-bottom: 0.5rem; color: #fff;">Combat Style</h4>
+                    <p>Prefers stealth and misdirection over direct confrontation. Uses shadow-step for teleportation across short distances.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixed Bottom Action Bar -->
+        <div class="absolute bottom-0 left-0 w-full bg-[rgba(18,16,29,0.95)] backdrop-blur-md border-t border-[#3A3651] px-8 py-4 flex justify-between items-center z-20">
+          <button class="text-sm font-bold text-[#E05A5A] hover:text-red-400 transition-colors flex items-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Delete Entry
+          </button>
+          <div class="flex items-center gap-4">
+            <span id="save-status" class="text-xs text-[#A09CB8] flex items-center gap-1 opacity-0 transition-opacity">
+              <i data-lucide="check" class="w-3.5 h-3.5 text-[#5AE08A]"></i> Saved
+            </span>
+            <button class="btn-primary px-8 py-2.5 rounded-lg text-sm flex items-center gap-2" onclick="simulateSave()">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              Save Changes
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Interactive Scripts -->
+    <script is:inline>
+      // Initialize icons
+      lucide.createIcons();
+
+      // Toggle category expand/collapse
+      function toggleCategory(id, btnElement) {
+        const content = document.getElementById(id);
+        const isExpanded = btnElement.getAttribute('aria-expanded') === 'true';
+
+        if (isExpanded) {
+          content.style.maxHeight = '0px';
+          btnElement.setAttribute('aria-expanded', 'false');
+        } else {
+          content.style.maxHeight = '500px';
+          btnElement.setAttribute('aria-expanded', 'true');
+        }
+      }
+
+      // Switch view state (empty state vs editor)
+      const emptyState = document.getElementById('empty-state');
+      const editorState = document.getElementById('editor-state');
+      const entryItems = document.querySelectorAll('.entry-item');
+
+      function showEmpty() {
+        // Remove active state from left sidebar
+        entryItems.forEach(item => item.classList.remove('active'));
+        // Switch panels
+        editorState.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+      }
+
+      function showEditor() {
+        // Set first element as active (demo only)
+        entryItems.forEach(item => item.classList.remove('active'));
+        entryItems[0].classList.add('active');
+
+        // Switch panels
+        emptyState.classList.add('hidden');
+        editorState.classList.remove('hidden');
+      }
+
+      // Simulate save animation
+      function simulateSave() {
+        const status = document.getElementById('save-status');
+        status.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Saving...';
+        status.classList.remove('opacity-0');
+        lucide.createIcons();
+
+        setTimeout(() => {
+          status.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-[#5AE08A]"></i> Saved';
+          lucide.createIcons();
+
+          setTimeout(() => {
+            status.classList.add('opacity-0');
+          }, 2000);
+        }, 800);
+      }
+    </script>
+  </body>
+</html>

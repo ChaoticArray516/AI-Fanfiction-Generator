@@ -1,0 +1,415 @@
+---
+const description = "Dashboard - AI Fanfiction Generator";
+const title = "Dashboard - AI Fanfiction";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Google Fonts: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script is:inline>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                bg: '#12101D',
+                text: '#EAE6F8',
+              },
+              secondary: {
+                bg: 'rgba(28, 25, 41, 0.75)',
+                text: '#A09CB8',
+              },
+              sidebar: '#0D0B14',
+              border: '#3A3651',
+              danger: '#E05A5A',
+              success: '#5AE08A'
+            },
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <style is:global>
+      /* Global Styles */
+      body {
+        background-color: #12101D;
+        color: #EAE6F8;
+        font-family: 'Manrope', sans-serif;
+        line-height: 1.7;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(28, 25, 41, 0.2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3A3651;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #8A2BE2;
+      }
+
+      /* Gradient Text */
+      .text-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .bg-accent-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+      }
+
+      /* Primary Button */
+      .btn-primary {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+
+      /* Glassmorphism Card */
+      .glass-card {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid #3A3651;
+        border-radius: 12px;
+        transition: all 0.2s ease-out;
+        overflow: hidden;
+      }
+      .glass-card:hover {
+        border-color: #8A2BE2;
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.15);
+        transform: translateY(-4px);
+      }
+
+      /* Input Field Glow */
+      .input-field {
+        background: rgba(18, 16, 29, 0.6);
+        border: 1px solid #3A3651;
+        color: #EAE6F8;
+        transition: all 0.2s ease-out;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #8A2BE2;
+        box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.25), 0 0 15px rgba(138, 43, 226, 0.15);
+      }
+
+      /* Sidebar Transition Animation */
+      .sidebar {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .sidebar-text {
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      .sidebar:hover .sidebar-text {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      /* Card Menu Transition */
+      .kebab-menu {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .glass-card:hover .kebab-menu {
+        opacity: 1;
+      }
+
+      /* Active Sidebar Navigation */
+      .nav-item.active {
+        color: #EAE6F8;
+      }
+      .nav-item.active .icon-container {
+        color: #8A2BE2;
+      }
+      .nav-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10%;
+        height: 80%;
+        width: 3px;
+        background: linear-gradient(180deg, #8A2BE2, #4A00E0);
+        border-radius: 0 4px 4px 0;
+        box-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
+      }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body class="flex h-screen w-full text-[#EAE6F8] bg-[#12101D]">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar w-16 hover:w-[220px] bg-[#0D0B14] border-r border-[#3A3651] flex flex-col justify-between py-6 relative z-50 flex-shrink-0 group">
+
+      <!-- Top: Logo & Navigation -->
+      <div>
+        <!-- Logo -->
+        <div class="flex items-center px-4 mb-10 h-8 whitespace-nowrap overflow-hidden">
+          <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-[rgba(138,43,226,0.1)] border border-[rgba(138,43,226,0.3)] flex items-center justify-center shadow-[0_0_10px_rgba(138,43,226,0.3)]">
+            <i data-lucide="feather" class="w-4 h-4 text-[#EAE6F8]"></i>
+          </div>
+          <span class="ml-3 font-bold text-lg tracking-wide sidebar-text text-[#EAE6F8]">AI Fanfiction</span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex flex-col gap-2">
+          <!-- My Stories (Active) -->
+          <a href="#" class="nav-item active relative flex items-center px-5 py-3 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors whitespace-nowrap overflow-hidden group/item">
+            <div class="icon-container flex-shrink-0">
+              <i data-lucide="book-open" class="w-5 h-5 drop-shadow-[0_0_8px_rgba(138,43,226,0.4)]"></i>
+            </div>
+            <span class="ml-4 font-medium text-sm sidebar-text">My Stories</span>
+            <div class="absolute left-16 bg-secondary-bg border border-[#3A3651] px-2 py-1 rounded text-xs opacity-0 group-hover/item:opacity-0 group-[.w-16]:group-hover/item:opacity-100 transition-opacity pointer-events-none z-50">My Stories</div>
+          </a>
+
+          <!-- Community -->
+          <a href="#" class="nav-item relative flex items-center px-5 py-3 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors whitespace-nowrap overflow-hidden group/item">
+            <div class="icon-container flex-shrink-0">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <span class="ml-4 font-medium text-sm sidebar-text">Community</span>
+            <div class="absolute left-16 bg-secondary-bg border border-[#3A3651] px-2 py-1 rounded text-xs opacity-0 group-[.w-16]:group-hover/item:opacity-100 transition-opacity pointer-events-none z-50">Community</div>
+          </a>
+
+          <!-- Settings -->
+          <a href="/settings" class="nav-item relative flex items-center px-5 py-3 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors whitespace-nowrap overflow-hidden group/item">
+            <div class="icon-container flex-shrink-0">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+            </div>
+            <span class="ml-4 font-medium text-sm sidebar-text">Settings</span>
+            <div class="absolute left-16 bg-secondary-bg border border-[#3A3651] px-2 py-1 rounded text-xs opacity-0 group-[.w-16]:group-hover/item:opacity-100 transition-opacity pointer-events-none z-50">Settings</div>
+          </a>
+
+          <!-- Help -->
+          <a href="#" class="nav-item relative flex items-center px-5 py-3 text-[#A09CB8] hover:text-[#EAE6F8] transition-colors whitespace-nowrap overflow-hidden group/item">
+            <div class="icon-container flex-shrink-0">
+              <i data-lucide="help-circle" class="w-5 h-5"></i>
+            </div>
+            <span class="ml-4 font-medium text-sm sidebar-text">Help & Guides</span>
+            <div class="absolute left-16 bg-secondary-bg border border-[#3A3651] px-2 py-1 rounded text-xs opacity-0 group-[.w-16]:group-hover/item:opacity-100 transition-opacity pointer-events-none z-50">Help</div>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Bottom: User Avatar -->
+      <div class="px-4 whitespace-nowrap overflow-hidden flex items-center mt-auto cursor-pointer group/user">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex-shrink-0 border border-[#3A3651]"></div>
+        <div class="ml-3 sidebar-text flex flex-col">
+          <span class="text-sm font-bold text-[#EAE6F8] leading-tight">Author_199X</span>
+          <span class="text-xs text-[#A09CB8] leading-tight">Pro Plan</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 h-full overflow-y-auto relative bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyIiBjeT0iMiIgcj0iMSIgZmlsbD0icmdiYSgyMzQsIDIzMCwgMjQ4LCAwLjA1KSIvPjwvc3ZnPg==')]">
+
+      <div class="max-w-7xl mx-auto px-6 py-10 md:px-12 md:py-12">
+
+        <!-- Header: Title & Primary Button -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">My Stories</h1>
+          <button class="btn-primary px-6 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            New Story
+          </button>
+        </div>
+
+        <!-- Subheader: Search & Filter Options -->
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-6 border-b border-[#3A3651] w-full md:w-auto">
+            <button class="pb-3 text-sm font-bold text-[#EAE6F8] border-b-2 border-[#8A2BE2] transition-colors">All</button>
+            <button class="pb-3 text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">In Progress</button>
+            <button class="pb-3 text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Completed</button>
+          </div>
+
+          <!-- Search Box -->
+          <div class="relative w-full md:w-64">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09CB8]"></i>
+            <input type="text" placeholder="Search stories..." class="input-field w-full pl-10 pr-4 py-2 rounded-lg text-sm placeholder:text-[#3A3651]">
+          </div>
+        </div>
+
+        <!-- Grid: Story Cards (3 cols desktop, 2 tablet, 1 mobile) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          <!-- Story Card 1 -->
+          <div class="glass-card flex flex-col relative group cursor-pointer">
+            <!-- Top: Cover -->
+            <div class="h-36 bg-gradient-to-br from-[#1a0b2e] via-[#4A00E0] to-[#8A2BE2] relative flex items-center justify-center p-4">
+              <h2 class="text-2xl font-extrabold text-white text-center leading-tight drop-shadow-lg">Shadows of<br>the Citadel</h2>
+              <!-- Kebab Menu (Hover to show) -->
+              <button onclick="toggleMenu(event, 'menu-1')" class="kebab-menu absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+                <i data-lucide="more-vertical" class="w-4 h-4 text-white"></i>
+              </button>
+              <!-- Dropdown Menu -->
+              <div id="menu-1" class="absolute top-12 right-3 w-36 bg-secondary-bg border border-[#3A3651] backdrop-blur-xl rounded-lg shadow-xl py-1 hidden z-10">
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Open</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Rename</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Duplicate</a>
+                <div class="h-px bg-[#3A3651] my-1"></div>
+                <a href="#" class="block px-4 py-2 text-sm text-[#E05A5A] hover:bg-[#12101D] transition-colors">Delete</a>
+              </div>
+            </div>
+            <!-- Bottom: Details -->
+            <div class="p-5 flex-1 flex flex-col justify-between bg-secondary-bg">
+              <div>
+                <h3 class="font-bold text-lg mb-1 line-clamp-1">Shadows of the Citadel</h3>
+                <p class="text-xs text-[#A09CB8] mb-4">Last edited 2 hours ago</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-medium text-[#A09CB8]">
+                <div class="flex items-center gap-1.5" title="Word Count">
+                  <i data-lucide="type" class="w-3.5 h-3.5"></i>
+                  42,500
+                </div>
+                <div class="flex items-center gap-1.5" title="Chapters">
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  12 Chapters
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Story Card 2 -->
+          <div class="glass-card flex flex-col relative group cursor-pointer">
+            <div class="h-36 bg-gradient-to-br from-[#0f1c4d] via-[#103783] to-[#2b5876] relative flex items-center justify-center p-4">
+              <h2 class="text-2xl font-extrabold text-white text-center leading-tight drop-shadow-lg">Echoes in<br>the Ice</h2>
+              <button onclick="toggleMenu(event, 'menu-2')" class="kebab-menu absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+                <i data-lucide="more-vertical" class="w-4 h-4 text-white"></i>
+              </button>
+              <div id="menu-2" class="absolute top-12 right-3 w-36 bg-secondary-bg border border-[#3A3651] backdrop-blur-xl rounded-lg shadow-xl py-1 hidden z-10">
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Open</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Rename</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Duplicate</a>
+                <div class="h-px bg-[#3A3651] my-1"></div>
+                <a href="#" class="block px-4 py-2 text-sm text-[#E05A5A] hover:bg-[#12101D] transition-colors">Delete</a>
+              </div>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between bg-secondary-bg">
+              <div>
+                <h3 class="font-bold text-lg mb-1 line-clamp-1">Echoes in the Ice</h3>
+                <p class="text-xs text-[#A09CB8] mb-4">Last edited yesterday</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-medium text-[#A09CB8]">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="type" class="w-3.5 h-3.5"></i>
+                  18,240
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  5 Chapters
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Story Card 3 -->
+          <div class="glass-card flex flex-col relative group cursor-pointer">
+            <div class="h-36 bg-gradient-to-br from-[#3b0918] via-[#85162a] to-[#d63230] relative flex items-center justify-center p-4">
+              <h2 class="text-2xl font-extrabold text-white text-center leading-tight drop-shadow-lg">The Dragon's<br>Vow</h2>
+              <button onclick="toggleMenu(event, 'menu-3')" class="kebab-menu absolute top-3 right-3 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center hover:bg-black/50 transition-colors">
+                <i data-lucide="more-vertical" class="w-4 h-4 text-white"></i>
+              </button>
+              <div id="menu-3" class="absolute top-12 right-3 w-36 bg-secondary-bg border border-[#3A3651] backdrop-blur-xl rounded-lg shadow-xl py-1 hidden z-10">
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Open</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Rename</a>
+                <a href="#" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[#12101D] transition-colors">Duplicate</a>
+                <div class="h-px bg-[#3A3651] my-1"></div>
+                <a href="#" class="block px-4 py-2 text-sm text-[#E05A5A] hover:bg-[#12101D] transition-colors">Delete</a>
+              </div>
+            </div>
+            <div class="p-5 flex-1 flex flex-col justify-between bg-secondary-bg">
+              <div>
+                <h3 class="font-bold text-lg mb-1 line-clamp-1">The Dragon's Vow</h3>
+                <p class="text-xs text-[#A09CB8] mb-4">Last edited 5 days ago</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-medium text-[#A09CB8]">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="type" class="w-3.5 h-3.5"></i>
+                  89,100
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  34 Chapters
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Interactive Scripts -->
+    <script is:inline>
+      // Initialize icons
+      lucide.createIcons();
+
+      // Card dropdown menu interaction
+      function toggleMenu(event, menuId) {
+        event.stopPropagation();
+
+        // Close all other menus
+        document.querySelectorAll('[id^="menu-"]').forEach(menu => {
+          if (menu.id !== menuId) {
+            menu.classList.add('hidden');
+          }
+        });
+
+        // Toggle current menu
+        const menu = document.getElementById(menuId);
+        menu.classList.toggle('hidden');
+      }
+
+      // Click outside to close dropdown menus
+      document.addEventListener('click', () => {
+        document.querySelectorAll('[id^="menu-"]').forEach(menu => {
+          menu.classList.add('hidden');
+        });
+      });
+    </script>
+  </body>
+</html>
