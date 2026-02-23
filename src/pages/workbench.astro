@@ -445,37 +445,111 @@ const title = "Writing Workbench - AI Fanfiction";
         }, 1000);
       });
 
-      // ======== 3. AI Generation Animation ========
-      btnGenerate.addEventListener('click', () => {
+      // ======== 3. AI Generation (DeepSeek API) ========
+      btnGenerate.addEventListener('click', async () => {
         if(btnGenerate.disabled) return;
+
+        // 获取当前编辑器文本和场景指令
+        const currentText = editor.innerText.trim();
+        const sceneDirection = document.querySelector('textarea[placeholder*="defensive ward"]')?.value.trim()
+          || document.querySelector('textarea')?.value.trim()
+          || 'Continue the story from where it left off.';
+
+        // 获取风格和创造性设置
+        const style = document.querySelector('select')?.value || 'Cinematic';
+        const creativitySlider = document.querySelector('input[type="range"]');
+        const creativity = creativitySlider ? parseFloat(creativitySlider.value) / 100 : 0.7;
 
         const originalText = btnGenerate.innerHTML;
         btnGenerate.disabled = true;
         btnGenerate.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Generating...';
         lucide.createIcons();
 
-        setTimeout(() => {
-          const aiText = "As he reached toward the obsidian binding, a shockwave of cold energy pulsed through the room, blowing out the torches and leaving only the eerie, violet glow of the book. Kaelen was thrown backward, crashing into a bookshelf. \"Don't touch it!\" he choked out, gasping for air.";
+        try {
+          // 调用 DeepSeek API
+          const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: sceneDirection,
+              currentText: currentText,
+              context: '', // Lorebook context can be added here
+              style: style,
+              creativity: creativity,
+            }),
+          });
 
-          const newParagraph = document.createElement('p');
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
 
-          const magicSpan = document.createElement('span');
-          magicSpan.className = 'magic-text';
-          magicSpan.innerText = aiText;
+          // 读取流式响应
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let aiText = '';
 
-          newParagraph.appendChild(magicSpan);
-          editor.appendChild(newParagraph);
+          if (reader) {
+            const newParagraph = document.createElement('p');
+            const magicSpan = document.createElement('span');
+            magicSpan.className = 'magic-text';
+            newParagraph.appendChild(magicSpan);
+            editor.appendChild(newParagraph);
 
-          const scrollArea = document.getElementById('editor-scroll');
-          scrollArea.scrollTop = scrollArea.scrollHeight;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
 
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.trim() === '') continue;
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6).trim();
+                  if (data === '[DONE]') continue;
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    // DeepSeek/OpenAI 格式: choices[0].delta.content
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      aiText += content;
+                      magicSpan.textContent = aiText;
+
+                      // 自动滚动
+                      const scrollArea = document.getElementById('editor-scroll');
+                      if (scrollArea) {
+                        scrollArea.scrollTop = scrollArea.scrollHeight;
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('Failed to parse SSE line:', line);
+                  }
+                }
+              }
+            }
+
+            // 触发输入事件以更新字数统计
+            editor.dispatchEvent(new Event('input'));
+          }
+
+        } catch (error) {
+          console.error('Generation failed:', error);
+
+          // 尝试读取错误响应体
+          let errorDetails = error instanceof Error ? error.message : 'Unknown error';
+          if (error instanceof TypeError && error.message.includes('API error')) {
+            errorDetails = 'API 调用失败，请检查终端控制台获取详细错误信息';
+          }
+
+          alert('Failed to generate content. Please try again.\n\nError: ' + errorDetails);
+        } finally {
           btnGenerate.innerHTML = originalText;
           btnGenerate.disabled = false;
           lucide.createIcons();
-
-          editor.dispatchEvent(new Event('input'));
-
-        }, 1500);
+        }
       });
 
     </script>
