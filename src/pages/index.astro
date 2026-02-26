@@ -1,6 +1,12 @@
 ---
 const description = "AI-powered fanfiction writing assistant";
 const title = "AI Fanfiction Generator";
+
+// Check if user is authenticated
+const isAuthenticated = !!Astro.locals.user?.id;
+
+// Determine workbench link
+const workbenchLink = isAuthenticated ? '/dashboard' : '/workbench';
 ---
 
 <!doctype html>
@@ -214,8 +220,8 @@ const title = "AI Fanfiction Generator";
           <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
         </div>
         <div class="flex items-center gap-4">
-          <a href="/auth" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
-          <a href="/auth" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
+          <a href="/signin" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
+          <a href="/signup" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
         </div>
       </div>
     </nav>
@@ -240,10 +246,18 @@ const title = "AI Fanfiction Generator";
             From character creation to multi-chapter sagas — bring your imagination to life.
           </p>
           <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-            <a href="/dashboard" class="btn-primary px-8 py-4 rounded-xl text-lg flex items-center gap-2 group w-full sm:w-auto justify-center">
-              Start Writing for Free
+            <a href={workbenchLink} class="btn-primary px-8 py-4 rounded-xl text-lg flex items-center gap-2 group w-full sm:w-auto justify-center">
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Writing for Free'}
               <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
             </a>
+            {!isAuthenticated && (
+              <a href="/signup" class="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors flex items-center gap-2">
+                Create Account
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </a>
+            )}
           </div>
         </div>
 

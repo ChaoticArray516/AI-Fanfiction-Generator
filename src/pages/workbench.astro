@@ -1,6 +1,10 @@
 ---
+import { Workbench } from '../components/Workbench';
+import { SessionProvider } from '../contexts/SessionContext';
 const description = "Writing Workbench - AI Fanfiction Generator";
 const title = "Writing Workbench - AI Fanfiction";
+
+// Don't protect this route - allow guest access
 ---
 
 <!doctype html>
@@ -73,16 +77,16 @@ const title = "Writing Workbench - AI Fanfiction";
         background: #8A2BE2;
       }
 
-      /* Gradient Text */
-      .text-gradient {
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        color: transparent;
+      /* Glassmorphism Panel */
+      .glass-panel {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid #3A3651;
+        border-radius: 12px;
       }
 
-      /* Primary Button */
+      /* Button Styles */
       .btn-primary {
         background: linear-gradient(135deg, #8A2BE2, #4A00E0);
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
@@ -95,463 +99,25 @@ const title = "Writing Workbench - AI Fanfiction";
         box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
       }
 
-      /* Glass Panel */
-      .glass-panel {
-        background: rgba(28, 25, 41, 0.75);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid #3A3651;
-      }
-
-      /* Input Field */
-      .input-field {
-        background: rgba(18, 16, 29, 0.6);
-        border: 1px solid #3A3651;
-        color: #EAE6F8;
-        transition: all 0.2s ease-out;
-      }
-      .input-field:focus {
-        outline: none;
-        border-color: #8A2BE2;
-        box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.25);
-      }
-
-      /* Custom Range Slider */
-      input[type=range] {
-        -webkit-appearance: none;
-        width: 100%;
+      .btn-secondary {
         background: transparent;
-      }
-      input[type=range]:focus { outline: none; }
-      input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: 16px; width: 16px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-        box-shadow: 0 0 10px rgba(138, 43, 226, 0.6);
-        cursor: pointer;
-        margin-top: -6px;
-        transition: transform 0.1s;
-      }
-      input[type=range]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-      }
-      input[type=range]::-webkit-slider-runnable-track {
-        width: 100%; height: 4px;
-        cursor: pointer;
-        background: #3A3651;
-        border-radius: 2px;
-      }
-
-      /* Active Chapter Indicator */
-      .chapter-active {
-        position: relative;
+        border: 1px solid #3A3651;
+        transition: all 0.2s ease-out;
         color: #EAE6F8;
-        background: linear-gradient(90deg, rgba(138,43,226,0.1) 0%, transparent 100%);
+        font-weight: 500;
       }
-      .chapter-active::before {
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0; width: 3px;
-        background: linear-gradient(180deg, #8A2BE2, #4A00E0);
-        box-shadow: 0 0 8px rgba(138,43,226,0.6);
-        border-radius: 0 2px 2px 0;
-      }
-
-      /* Editor Container */
-      .editor-container {
-        font-size: 18px;
-        line-height: 1.7;
-        color: #EAE6F8;
-      }
-      .editor-container:focus { outline: none; }
-      .editor-container p { margin-bottom: 1.2em; }
-      .editor-container h2 { font-size: 1.5em; font-weight: 700; margin: 1.5em 0 0.8em; }
-
-      /* Magic Writing Animation */
-      @keyframes magic-glow {
-        0% { color: #8A2BE2; text-shadow: 0 0 12px #8A2BE2, 0 0 24px #4A00E0; }
-        50% { color: #d4b3ff; text-shadow: 0 0 8px #8A2BE2; }
-        100% { color: #EAE6F8; text-shadow: none; }
-      }
-      .magic-text {
-        animation: magic-glow 2s ease-out forwards;
-        display: inline-block;
-      }
-
-      /* Floating Toolbar */
-      .floating-toolbar {
-        position: absolute;
-        transform: translate(-50%, -100%);
-        margin-top: -10px;
-        z-index: 50;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s ease-out, margin-top 0.2s ease-out;
-      }
-      .floating-toolbar.active {
-        opacity: 1;
-        pointer-events: auto;
-        margin-top: -15px;
+      .btn-secondary:hover {
+        border-color: #8A2BE2;
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
       }
     </style>
 
     <!-- Lucide Icons -->
     <script is:inline src="https://unpkg.com/lucide@latest"></script>
   </head>
-  <body class="flex h-screen w-full bg-[#12101D] overflow-hidden">
-
-    <!-- LEFT PANEL (NAVIGATOR) -->
-    <aside class="w-[240px] flex-shrink-0 border-r border-[#3A3651] flex flex-col h-full bg-[#12101D] z-10 transition-all duration-300">
-
-      <!-- Story Title -->
-      <div class="h-14 flex items-center px-5 border-b border-[#3A3651]">
-        <h1 class="font-bold text-lg truncate" title="Shadows of the Citadel">Shadows of the Citadel</h1>
-      </div>
-
-      <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-6">
-
-        <!-- Chapters Section -->
-        <div class="px-3">
-          <div class="flex items-center justify-between px-2 mb-2">
-            <h2 class="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">Chapters</h2>
-            <button class="text-[#A09CB8] hover:text-[#EAE6F8]"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
-          </div>
-          <ul class="flex flex-col gap-0.5">
-            <li><a href="#" class="block px-3 py-2 text-sm text-[#A09CB8] hover:text-[#EAE6F8] hover:bg-[rgba(255,255,255,0.03)] rounded-r-md transition-colors truncate">Chapter 1: The Arrival</a></li>
-            <li><a href="#" class="block px-3 py-2 text-sm text-[#A09CB8] hover:text-[#EAE6F8] hover:bg-[rgba(255,255,255,0.03)] rounded-r-md transition-colors truncate">Chapter 2: Dust & Echoes</a></li>
-            <li><a href="#" class="block px-3 py-2 text-sm chapter-active truncate font-medium">Chapter 3: Hidden Archives</a></li>
-            <li><a href="#" class="block px-3 py-2 text-sm text-[#A09CB8] hover:text-[#EAE6F8] hover:bg-[rgba(255,255,255,0.03)] rounded-r-md transition-colors truncate">Chapter 4: The Betrayal</a></li>
-          </ul>
-        </div>
-
-        <!-- Lorebook Section -->
-        <div class="px-3">
-          <div class="flex items-center justify-between px-2 mb-3">
-            <h2 class="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">Lorebook</h2>
-            <button class="text-[#A09CB8] hover:text-[#EAE6F8]"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></button>
-          </div>
-          <!-- Chips -->
-          <div class="flex flex-wrap gap-2 px-2">
-            <span class="bg-[rgba(28,25,41,0.8)] border border-[#3A3651] rounded-full px-2.5 py-1 text-xs font-medium text-[#A09CB8] hover:text-[#EAE6F8] hover:border-[#8A2BE2] cursor-pointer transition-colors flex items-center gap-1">
-              <i data-lucide="user" class="w-3 h-3 text-[#8A2BE2]"></i> Elara
-            </span>
-            <span class="bg-[rgba(28,25,41,0.8)] border border-[#3A3651] rounded-full px-2.5 py-1 text-xs font-medium text-[#A09CB8] hover:text-[#EAE6F8] hover:border-[#8A2BE2] cursor-pointer transition-colors flex items-center gap-1">
-              <i data-lucide="user" class="w-3 h-3 text-[#8A2BE2]"></i> Kaelen
-            </span>
-            <span class="bg-[rgba(28,25,41,0.8)] border border-[#3A3651] rounded-full px-2.5 py-1 text-xs font-medium text-[#A09CB8] hover:text-[#EAE6F8] hover:border-[#8A2BE2] cursor-pointer transition-colors flex items-center gap-1">
-              <i data-lucide="map-pin" class="w-3 h-3 text-emerald-400"></i> The Citadel
-            </span>
-            <span class="bg-[rgba(28,25,41,0.8)] border border-[#3A3651] rounded-full px-2.5 py-1 text-xs font-medium text-[#A09CB8] hover:text-[#EAE6F8] hover:border-[#8A2BE2] cursor-pointer transition-colors flex items-center gap-1">
-              <i data-lucide="sword" class="w-3 h-3 text-amber-400"></i> Sunblade
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Add Chapter Button -->
-      <div class="p-4 border-t border-[#3A3651]">
-        <button class="w-full flex items-center gap-2 text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">
-          <i data-lucide="plus" class="w-4 h-4"></i> Add Chapter
-        </button>
-      </div>
-    </aside>
-
-    <!-- CENTER PANEL (MAIN EDITOR) -->
-    <main class="flex-1 flex flex-col relative min-w-0 bg-[#12101D]">
-
-      <!-- Top Bar -->
-      <header class="h-14 flex items-center justify-between px-8 z-10">
-        <input type="text" value="Chapter 3: Hidden Archives" class="bg-transparent border-none outline-none text-lg font-bold text-[#A09CB8] hover:text-[#EAE6F8] focus:text-[#EAE6F8] transition-colors w-1/2 cursor-pointer focus:cursor-text" title="Click to edit chapter title">
-        <div class="text-xs font-medium text-[#A09CB8] bg-[rgba(28,25,41,0.5)] px-3 py-1 rounded-full border border-[#3A3651]">
-          <span id="word-count">1,245</span> words
-        </div>
-      </header>
-
-      <!-- Editor Area -->
-      <div class="flex-1 overflow-y-auto px-8 md:px-16 lg:px-24 xl:px-32 py-10 pb-32 relative" id="editor-scroll">
-
-        <!-- Floating Toolbar (hidden by default) -->
-        <div id="floating-toolbar" class="floating-toolbar glass-panel rounded-lg shadow-xl flex items-center p-1 gap-1 border border-[#3A3651]">
-          <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.1)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"><i data-lucide="bold" class="w-4 h-4"></i></button>
-          <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.1)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"><i data-lucide="italic" class="w-4 h-4"></i></button>
-          <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.1)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"><i data-lucide="heading" class="w-4 h-4"></i></button>
-          <div class="w-px h-4 bg-[#3A3651] mx-1"></div>
-          <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.1)] text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"><i data-lucide="quote" class="w-4 h-4"></i></button>
-          <button class="p-1.5 rounded hover:bg-[rgba(255,255,255,0.1)] text-[#A09CB8] hover:text-[#8A2BE2] transition-colors"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
-        </div>
-
-        <!-- ContentEditable Div -->
-        <div id="main-editor" contenteditable="true" class="editor-container min-h-full max-w-[700px] mx-auto" spellcheck="false">
-          <p>The heavy oak doors of the archive groaned as Elara pushed them open. The scent of ancient paper and stale magic wafted out, wrapping around her like a physical presence. Kaelen was already inside, his glowing staff casting long, distorted shadows against the towering bookshelves that seemed to stretch infinitely upward.</p>
-          <p>"Did you find it?" Elara whispered, stepping over a pile of crumbling tomes.</p>
-          <p>Kaelen didn't turn around. He was staring intensely at a glowing crystal pedestal in the center of the room. "I found something," he replied, his voice barely audible. "But I don't think it's what the Council sent us for."</p>
-          <p>She walked up beside him. Suspended in the anti-gravity field of the pedestal was a book, but not bound in leather or dragon-scale. It was bound in pure, solidified shadow.</p>
-          <p>"The Obsidian Codex," Elara breathed, her eyes widening. "It's not a myth."</p>
-        </div>
-      </div>
-
-      <!-- Autosave Indicator -->
-      <div id="autosave-indicator" class="absolute bottom-6 right-8 text-xs font-medium text-[#A09CB8] flex items-center gap-1.5 opacity-70">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-[#5AE08A]"></i>
-        Saved
-      </div>
-    </main>
-
-    <!-- RIGHT PANEL (AI CONTROL PANEL) -->
-    <aside class="w-[320px] flex-shrink-0 border-l border-[#3A3651] flex flex-col h-full bg-[#12101D] z-10">
-
-      <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-
-        <!-- Generate Button -->
-        <button id="btn-generate" class="btn-primary w-full py-3.5 rounded-xl text-[15px] flex justify-center items-center gap-2 group">
-          <i data-lucide="sparkles" class="w-4 h-4 group-hover:animate-pulse"></i>
-          Continue Writing
-        </button>
-
-        <hr class="border-[#3A3651]">
-
-        <!-- Scene Direction -->
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <label class="text-sm font-bold text-[#EAE6F8]">Scene Direction</label>
-            <button class="text-[10px] text-[#A09CB8] hover:text-[#EAE6F8] uppercase tracking-wider">Clear</button>
-          </div>
-          <textarea class="input-field w-full rounded-lg px-3 py-2.5 text-sm resize-none h-24 placeholder:text-[#3A3651]" placeholder="e.g. Kaelen reaches out to touch the book, but a defensive ward triggers, throwing him back..."></textarea>
-        </div>
-
-        <!-- Style & Tone -->
-        <div class="flex flex-col gap-5">
-          <h3 class="text-sm font-bold text-[#EAE6F8]">Style & Tone</h3>
-
-          <!-- Creativity Slider -->
-          <div>
-            <div class="flex justify-between text-xs text-[#A09CB8] font-medium mb-3">
-              <span>Grounded</span>
-              <span class="text-[#EAE6F8]">Creativity</span>
-              <span>Fantastical</span>
-            </div>
-            <input type="range" min="1" max="100" value="70">
-          </div>
-
-          <!-- Writing Style Dropdown -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-[#A09CB8] font-medium">Writing Style</label>
-            <div class="relative">
-              <select class="input-field w-full rounded-lg px-3 py-2 text-sm appearance-none cursor-pointer">
-                <option>Cinematic</option>
-                <option>Poetic</option>
-                <option selected>Suspenseful</option>
-                <option>Romantic</option>
-                <option>Gritty</option>
-              </select>
-              <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09CB8] pointer-events-none"></i>
-            </div>
-          </div>
-        </div>
-
-        <hr class="border-[#3A3651]">
-
-        <!-- Generation History -->
-        <div class="flex flex-col gap-3 pb-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-[#EAE6F8]">History</h3>
-            <span class="text-xs text-[#A09CB8]">Last 3</span>
-          </div>
-
-          <!-- History Card 1 -->
-          <div class="glass-panel p-3 rounded-lg flex flex-col gap-2 cursor-pointer hover:border-[#8A2BE2] transition-colors group">
-            <p class="text-xs text-[#A09CB8] line-clamp-2 leading-relaxed group-hover:text-[#EAE6F8] transition-colors">
-              "The Obsidian Codex," Elara breathed, her eyes widening. "It's not a myth."
-            </p>
-            <div class="flex justify-between items-center text-[10px] text-[#3A3651] group-hover:text-[#A09CB8]">
-              <span>2 mins ago</span>
-              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="hover:text-[#EAE6F8]"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                <button class="hover:text-[#E05A5A]"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
-              </div>
-            </div>
-          </div>
-
-          <!-- History Card 2 -->
-          <div class="glass-panel p-3 rounded-lg flex flex-col gap-2 cursor-pointer hover:border-[#8A2BE2] transition-colors group opacity-70 hover:opacity-100">
-            <p class="text-xs text-[#A09CB8] line-clamp-2 leading-relaxed group-hover:text-[#EAE6F8] transition-colors">
-              Kaelen stepped back, his staff dimming. "We should leave. Now."
-            </p>
-            <div class="flex justify-between items-center text-[10px] text-[#3A3651] group-hover:text-[#A09CB8]">
-              <span>15 mins ago</span>
-              <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="hover:text-[#EAE6F8]"><i data-lucide="copy" class="w-3 h-3"></i></button>
-                <button class="hover:text-[#E05A5A]"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </aside>
-
-    <!-- Interactive Scripts -->
-    <script is:inline>
-      // Initialize icons
-      lucide.createIcons();
-
-      const editor = document.getElementById('main-editor');
-      const toolbar = document.getElementById('floating-toolbar');
-      const autosaveIndicator = document.getElementById('autosave-indicator');
-      const btnGenerate = document.getElementById('btn-generate');
-      const wordCountDisplay = document.getElementById('word-count');
-
-      // ======== 1. Floating Toolbar ========
-      document.addEventListener('selectionchange', () => {
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0 && !selection.isCollapsed && editor.contains(selection.anchorNode)) {
-          const range = selection.getRangeAt(0);
-          const rect = range.getBoundingClientRect();
-
-          toolbar.style.left = `${rect.left + rect.width / 2}px`;
-          toolbar.style.top = `${rect.top}px`;
-          toolbar.classList.add('active');
-        } else {
-          toolbar.classList.remove('active');
-        }
-      });
-
-      // Hide toolbar (click outside)
-      document.addEventListener('mousedown', (e) => {
-        if (!toolbar.contains(e.target) && !editor.contains(e.target)) {
-          toolbar.classList.remove('active');
-        }
-      });
-
-      // ======== 2. Autosave & Word Count ========
-      let typingTimer;
-      editor.addEventListener('input', () => {
-        // Update word count
-        const text = editor.innerText.trim();
-        const words = text ? text.split(/\s+/).length : 0;
-        wordCountDisplay.innerText = words.toLocaleString();
-
-        // Autosave status
-        autosaveIndicator.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-[#A09CB8]"></i> Saving...';
-        autosaveIndicator.classList.remove('opacity-70');
-        lucide.createIcons();
-
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => {
-          autosaveIndicator.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-[#5AE08A]"></i> Saved';
-          autosaveIndicator.classList.add('opacity-70');
-          lucide.createIcons();
-        }, 1000);
-      });
-
-      // ======== 3. AI Generation (DeepSeek API) ========
-      btnGenerate.addEventListener('click', async () => {
-        if(btnGenerate.disabled) return;
-
-        // 获取当前编辑器文本和场景指令
-        const currentText = editor.innerText.trim();
-        const sceneDirection = document.querySelector('textarea[placeholder*="defensive ward"]')?.value.trim()
-          || document.querySelector('textarea')?.value.trim()
-          || 'Continue the story from where it left off.';
-
-        // 获取风格和创造性设置
-        const style = document.querySelector('select')?.value || 'Cinematic';
-        const creativitySlider = document.querySelector('input[type="range"]');
-        const creativity = creativitySlider ? parseFloat(creativitySlider.value) / 100 : 0.7;
-
-        const originalText = btnGenerate.innerHTML;
-        btnGenerate.disabled = true;
-        btnGenerate.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Generating...';
-        lucide.createIcons();
-
-        try {
-          // 调用 DeepSeek API
-          const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt: sceneDirection,
-              currentText: currentText,
-              context: '', // Lorebook context can be added here
-              style: style,
-              creativity: creativity,
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-
-          // 读取流式响应
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-          let aiText = '';
-
-          if (reader) {
-            const newParagraph = document.createElement('p');
-            const magicSpan = document.createElement('span');
-            magicSpan.className = 'magic-text';
-            newParagraph.appendChild(magicSpan);
-            editor.appendChild(newParagraph);
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split('\n');
-
-              for (const line of lines) {
-                if (line.trim() === '') continue;
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6).trim();
-                  if (data === '[DONE]') continue;
-
-                  try {
-                    const parsed = JSON.parse(data);
-                    // DeepSeek/OpenAI 格式: choices[0].delta.content
-                    const content = parsed.choices?.[0]?.delta?.content;
-                    if (content) {
-                      aiText += content;
-                      magicSpan.textContent = aiText;
-
-                      // 自动滚动
-                      const scrollArea = document.getElementById('editor-scroll');
-                      if (scrollArea) {
-                        scrollArea.scrollTop = scrollArea.scrollHeight;
-                      }
-                    }
-                  } catch (e) {
-                    console.warn('Failed to parse SSE line:', line);
-                  }
-                }
-              }
-            }
-
-            // 触发输入事件以更新字数统计
-            editor.dispatchEvent(new Event('input'));
-          }
-
-        } catch (error) {
-          console.error('Generation failed:', error);
-
-          // 尝试读取错误响应体
-          let errorDetails = error instanceof Error ? error.message : 'Unknown error';
-          if (error instanceof TypeError && error.message.includes('API error')) {
-            errorDetails = 'API 调用失败，请检查终端控制台获取详细错误信息';
-          }
-
-          alert('Failed to generate content. Please try again.\n\nError: ' + errorDetails);
-        } finally {
-          btnGenerate.innerHTML = originalText;
-          btnGenerate.disabled = false;
-          lucide.createIcons();
-        }
-      });
-
-    </script>
+  <body>
+    <SessionProvider client:load>
+      <Workbench client:load />
+    </SessionProvider>
   </body>
 </html>

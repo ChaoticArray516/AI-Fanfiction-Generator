@@ -1,11 +1,9 @@
 ---
-import { Dashboard } from '../components/Dashboard';
-const description = "Dashboard - AI Fanfiction Generator";
-const title = "Dashboard - AI Fanfiction";
+import { SigninForm } from '../components/SigninForm';
 
-// Protect route: Redirect to signin if not authenticated
-if (!Astro.locals.user?.id) {
-  return Astro.redirect('/signin');
+// If user is already logged in, redirect to dashboard
+if (Astro.locals.user?.id) {
+  return Astro.redirect('/dashboard');
 }
 ---
 
@@ -13,11 +11,11 @@ if (!Astro.locals.user?.id) {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content={description} />
+    <meta name="description" content="Sign in to AI Fanfiction Generator" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
+    <title>Sign In - AI Fanfiction Generator</title>
 
     <!-- Google Fonts: Manrope -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,33 +58,32 @@ if (!Astro.locals.user?.id) {
         color: #EAE6F8;
         font-family: 'Manrope', sans-serif;
         margin: 0;
-        padding: 0;
       }
 
-      /* Primary Button */
+      /* Button Styles */
       .btn-primary {
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
-        transition: all 0.2s ease-out;
+        background: linear-gradient(135deg, #8A2BE2 0%, #4A00E0 100%);
         color: #EAE6F8;
-        font-weight: 700;
-      }
-      .btn-primary:hover {
-        filter: brightness(1.1);
-        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+        font-weight: 600;
+        transition: all 0.3s ease;
       }
 
-      /* Secondary Button */
-      .btn-secondary {
-        background: transparent;
-        border: 1px solid #3A3651;
-        transition: all 0.2s ease-out;
-        color: #EAE6F8;
-        font-weight: 500;
+      .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(138, 43, 226, 0.3);
       }
+
+      .btn-secondary {
+        background: rgba(28, 25, 41, 0.75);
+        border: 1px solid #3A3651;
+        color: #EAE6F8;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
       .btn-secondary:hover {
+        background: rgba(138, 43, 226, 0.1);
         border-color: #8A2BE2;
-        box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
       }
 
       /* Glassmorphism Panel */
@@ -98,26 +95,24 @@ if (!Astro.locals.user?.id) {
         border-radius: 12px;
       }
 
-      /* Glassmorphism Card */
-      .glass-card {
-        background: rgba(28, 25, 41, 0.75);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid #3A3651;
-        border-radius: 12px;
-        transition: all 0.2s ease-out;
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
       }
-      .glass-card:hover {
-        border-color: #8A2BE2;
-        box-shadow: 0 0 20px rgba(138, 43, 226, 0.15);
-        transform: translateY(-4px);
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3A3651;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #8A2BE2;
       }
     </style>
-
-    <!-- Lucide Icons -->
-    <script is:inline src="https://unpkg.com/lucide@latest"></script>
   </head>
   <body>
-    <Dashboard client:load />
+    <SigninForm client:load />
   </body>
 </html>
