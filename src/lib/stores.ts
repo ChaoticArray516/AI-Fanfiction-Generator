@@ -6,7 +6,11 @@
  */
 
 import { atom } from 'nanostores';
-import { storiesApi } from './apiService';
+import { storiesService, chaptersService, loreService } from './dataService';
+
+// ============================================
+// Type Definitions
+// ============================================
 
 // Story type (matching the backend schema)
 export interface Story {
@@ -17,8 +21,38 @@ export interface Story {
   updatedAt: string;
 }
 
+export interface Chapter {
+  id: string;
+  storyId: string;
+  title: string;
+  content: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoreEntry {
+  id: string;
+  storyId: string;
+  name: string;
+  type: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Story with all related data
+ * Used in the workbench to display the complete story
+ */
+export interface StoryWithDetails {
+  story: Story;
+  chapters: Chapter[];
+  loreEntries: LoreEntry[];
+}
+
 // ============================================
-// Stories Store
+// Stories Store (Dashboard)
 // ============================================
 
 /**
@@ -38,7 +72,32 @@ export const isLoadingStore = atom<boolean>(false);
 export const errorStore = atom<string | null>(null);
 
 // ============================================
-// Store Actions
+// Workbench Store (Active Story)
+// ============================================
+
+/**
+ * Active story atom - holds the complete story object with chapters and lore
+ * Used in the workbench to display and edit the current story
+ */
+export const activeStoryStore = atom<StoryWithDetails | null>(null);
+
+/**
+ * Active chapter atom - holds the currently editing chapter
+ */
+export const activeChapterStore = atom<Chapter | null>(null);
+
+/**
+ * Workbench loading state atom - tracks if workbench data is being loaded
+ */
+export const isWorkbenchLoadingStore = atom<boolean>(false);
+
+/**
+ * Workbench error state atom - holds any workbench-specific error messages
+ */
+export const workbenchErrorStore = atom<string | null>(null);
+
+// ============================================
+// Store Actions - Dashboard
 // ============================================
 
 /**
@@ -50,7 +109,7 @@ export async function loadStories(): Promise<void> {
     isLoadingStore.set(true);
     errorStore.set(null);
 
-    const stories = await storiesApi.getAll();
+    const stories = await storiesService.getAll();
 
     // Sort by updatedAt descending
     const sortedStories = stories.sort(
@@ -77,7 +136,7 @@ export async function addNewStory(title: string): Promise<Story> {
     errorStore.set(null);
 
     // Add story to database
-    const newStory = await storiesApi.create(title);
+    const newStory = await storiesService.create(title);
 
     // Refresh the store with updated data
     await loadStories();
@@ -99,7 +158,7 @@ export async function updateStory(story: Story): Promise<void> {
   try {
     errorStore.set(null);
 
-    await storiesApi.update(story.id, { title: story.title });
+    await storiesService.update(story.id, { title: story.title });
 
     // Refresh the store
     await loadStories();
@@ -119,7 +178,7 @@ export async function deleteStory(id: string): Promise<void> {
   try {
     errorStore.set(null);
 
-    await storiesApi.delete(id);
+    await storiesService.delete(id);
 
     // Refresh the store
     await loadStories();
@@ -132,7 +191,155 @@ export async function deleteStory(id: string): Promise<void> {
 }
 
 // ============================================
-// Utility Functions
+// Store Actions - Workbench
+// ============================================
+
+/**
+ * Load a story with all its details (chapters and lore) into the workbench
+ * This is the core function for preparing the workbench with story data
+ *
+ * @param storyId - The ID of the story to load
+ */
+export async function loadStoryForWorkbench(storyId: string): Promise<void> {
+  try {
+    isWorkbenchLoadingStore.set(true);
+    workbenchErrorStore.set(null);
+
+    // Parallel fetch: story details, chapters, and lore entries
+    const [story, chapters, loreEntries] = await Promise.all([
+      storiesService.getById(storyId),
+      chaptersService.getAllForStory(storyId),
+      loreService.getAllForStory(storyId),
+    ]);
+
+    // Combine into StoryWithDetails object
+    const storyWithDetails: StoryWithDetails = {
+      story,
+      chapters: chapters.sort((a, b) => a.order - b.order), // Sort by order
+      loreEntries,
+    };
+
+    // Update the active story store
+    activeStoryStore.set(storyWithDetails);
+
+    // Set the first chapter as active if available
+    if (chapters.length > 0) {
+      const firstChapter = chapters.sort((a, b) => a.order - b.order)[0];
+      activeChapterStore.set(firstChapter);
+    } else {
+      activeChapterStore.set(null);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    workbenchErrorStore.set(`Failed to load story: ${errorMessage}`);
+    console.error('Error loading story for workbench:', error);
+  } finally {
+    isWorkbenchLoadingStore.set(false);
+  }
+}
+
+/**
+ * Select a chapter to edit in the workbench
+ *
+ * @param chapterId - The ID of the chapter to select
+ */
+export function selectChapter(chapterId: string): void {
+  const activeStory = activeStoryStore.get();
+
+  if (!activeStory) {
+    console.error('No active story found');
+    return;
+  }
+
+  const chapter = activeStory.chapters.find((ch) => ch.id === chapterId);
+
+  if (!chapter) {
+    console.error(`Chapter ${chapterId} not found in active story`);
+    return;
+  }
+
+  activeChapterStore.set(chapter);
+}
+
+/**
+ * Update the content of the currently active chapter
+ * This will persist the changes to the backend via API
+ *
+ * @param content - The new content for the chapter
+ */
+export async function updateActiveChapterContent(content: string): Promise<void> {
+  const activeChapter = activeChapterStore.get();
+
+  if (!activeChapter) {
+    console.error('No active chapter to update');
+    return;
+  }
+
+  try {
+    workbenchErrorStore.set(null);
+
+    // Update via API
+    const updatedChapter = await chaptersService.updateContent(activeChapter.id, content);
+
+    // Update the active chapter store
+    activeChapterStore.set(updatedChapter);
+
+    // Also update the chapter in the active story store
+    const activeStory = activeStoryStore.get();
+    if (activeStory) {
+      const updatedChapters = activeStory.chapters.map((ch) =>
+        ch.id === updatedChapter.id ? updatedChapter : ch
+      );
+      activeStoryStore.set({
+        ...activeStory,
+        chapters: updatedChapters,
+      });
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    workbenchErrorStore.set(`Failed to update chapter: ${errorMessage}`);
+    console.error('Error updating chapter content:', error);
+    throw error;
+  }
+}
+
+/**
+ * Add a new chapter to the current story
+ * After creation, the story data is reloaded to ensure consistency
+ *
+ * @param title - The title of the new chapter
+ */
+export async function addNewChapterToStory(title: string): Promise<void> {
+  const activeStory = activeStoryStore.get();
+
+  if (!activeStory) {
+    console.error('No active story found');
+    return;
+  }
+
+  try {
+    workbenchErrorStore.set(null);
+
+    // Calculate the next order number
+    const nextOrder = activeStory.chapters.length > 0
+      ? Math.max(...activeStory.chapters.map(ch => ch.order)) + 1
+      : 1;
+
+    // Create new chapter via API
+    await chaptersService.create(activeStory.story.id, title, nextOrder, '');
+
+    // Reload the entire story to ensure state consistency
+    await loadStoryForWorkbench(activeStory.story.id);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    workbenchErrorStore.set(`Failed to add chapter: ${errorMessage}`);
+    console.error('Error adding new chapter:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// Utility Functions - Dashboard
 // ============================================
 
 /**
@@ -162,4 +369,52 @@ export function getError(): string | null {
  */
 export function clearError(): void {
   errorStore.set(null);
+}
+
+// ============================================
+// Utility Functions - Workbench
+// ============================================
+
+/**
+ * Get the current active story with details
+ */
+export function getActiveStory(): StoryWithDetails | null {
+  return activeStoryStore.get();
+}
+
+/**
+ * Get the current active chapter
+ */
+export function getActiveChapter(): Chapter | null {
+  return activeChapterStore.get();
+}
+
+/**
+ * Check if workbench data is currently being loaded
+ */
+export function isWorkbenchLoading(): boolean {
+  return isWorkbenchLoadingStore.get();
+}
+
+/**
+ * Get the current workbench error message
+ */
+export function getWorkbenchError(): string | null {
+  return workbenchErrorStore.get();
+}
+
+/**
+ * Clear the workbench error state
+ */
+export function clearWorkbenchError(): void {
+  workbenchErrorStore.set(null);
+}
+
+/**
+ * Clear all workbench state (useful when logging out or switching stories)
+ */
+export function clearWorkbenchState(): void {
+  activeStoryStore.set(null);
+  activeChapterStore.set(null);
+  workbenchErrorStore.set(null);
 }

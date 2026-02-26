@@ -1,0 +1,159 @@
+---
+/**
+ * Workbench Dynamic Route
+ *
+ * Unified entry point for all workbench URLs.
+ * Handles routing like /workbench/[storyId] or /workbench/[storyId]/[chapterId]
+ */
+
+import { Workbench } from '../../components/Workbench';
+import { SessionProvider } from '../../contexts/SessionContext';
+
+// Get the URL path segments
+const fullPath = Astro.url.pathname.split('/').filter(Boolean);
+
+// Extract storyId and chapterId from path
+// Expected patterns:
+// - /workbench/[storyId]
+// - /workbench/[storyId]/[chapterId]
+let storyId: string | undefined = undefined;
+let chapterId: string | undefined = undefined;
+
+if (fullPath[0] === 'workbench' && fullPath.length >= 2) {
+  storyId = fullPath[1];
+  if (fullPath.length >= 3) {
+    chapterId = fullPath[2];
+  }
+}
+
+// Redirect to signin if accessing workbench directly without being authenticated
+// Note: We check if user is authenticated on the server side
+const isAuthenticated = Astro.locals?.session?.user?.id;
+
+// If no storyId provided, redirect to dashboard
+if (!storyId) {
+  return Astro.redirect('/dashboard');
+}
+
+const description = "Writing Workbench - AI Fanfiction Generator";
+const title = "Writing Workbench - AI Fanfiction";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+
+    <!-- Google Fonts: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script is:inline>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                bg: '#12101D',
+                text: '#EAE6F8',
+              },
+              secondary: {
+                bg: 'rgba(28, 25, 41, 0.75)',
+                text: '#A09CB8',
+              },
+              border: '#3A3651',
+              danger: '#E05A5A',
+              success: '#5AE08A'
+            },
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <style is:global>
+      /* Global Styles */
+      body {
+        background-color: #12101D;
+        color: #EAE6F8;
+        font-family: 'Manrope', sans-serif;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3A3651;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #8A2BE2;
+      }
+
+      /* Glassmorphism Panel */
+      .glass-panel {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid #3A3651;
+        border-radius: 12px;
+      }
+
+      /* Button Styles */
+      .btn-primary {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid #3A3651;
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 500;
+      }
+      .btn-secondary:hover {
+        border-color: #8A2BE2;
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+      }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
+  </head>
+  <body>
+    <SessionProvider client:load>
+      <Workbench
+        client:load
+        storyId={storyId}
+        chapterId={chapterId}
+      />
+    </SessionProvider>
+  </body>
+</html>

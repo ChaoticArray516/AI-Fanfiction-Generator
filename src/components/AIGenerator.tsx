@@ -1,4 +1,4 @@
-import { useCompletion } from 'ai/react';
+import { useCompletion } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
 
 interface LoreEntry {

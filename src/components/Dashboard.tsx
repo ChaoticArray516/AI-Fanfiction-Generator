@@ -37,13 +37,8 @@ export function Dashboard() {
 
   // Handle opening a story
   const handleOpenStory = (storyId: string) => {
-    // Find the first chapter or redirect to create one
-    const story = stories.find(s => s.id === storyId);
-    if (story) {
-      // For now, redirect to dashboard with a note to add chapters
-      // In the future, we could redirect to the workbench with a new chapter
-      window.location.href = `/workbench/${storyId}/new`;
-    }
+    // Navigate to the unified workbench route
+    window.location.href = `/workbench/${storyId}`;
   };
 
   // Handle deleting a story

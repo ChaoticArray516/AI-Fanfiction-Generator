@@ -5,34 +5,26 @@
  * - Left: Chapter & Lore navigator
  * - Center: Main editor
  * - Right: AI control panel
+ *
+ * Refactored to use global state management with nanostores
  */
 
 import { useState, useEffect } from 'react';
-import { storiesApi, chaptersApi, loreApi } from '../lib/apiService';
-import { guestDataManager } from '../lib/guestDataManager';
-import { useAuthSession } from '../contexts/SessionContext';
-import type { Story } from '../lib/stores';
-
-// Define types based on API service
-interface Chapter {
-  id: string;
-  storyId: string;
-  title: string;
-  content: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LoreEntry {
-  id: string;
-  storyId: string;
-  name: string;
-  type: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { useStore } from '@nanostores/react';
+import {
+  activeStoryStore,
+  activeChapterStore,
+  isWorkbenchLoadingStore,
+  workbenchErrorStore,
+  loadStoryForWorkbench,
+  selectChapter,
+  updateActiveChapterContent,
+  addNewChapterToStory,
+  type StoryWithDetails,
+  type Chapter,
+} from '../lib/stores';
+import { chaptersApi } from '../lib/apiService';
+import { AIGenerator } from './AIGenerator';
 
 interface WorkbenchProps {
   storyId?: string;
@@ -40,181 +32,61 @@ interface WorkbenchProps {
 }
 
 export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: WorkbenchProps) {
-  // Get user session
-  const { user, isAuthenticated } = useAuthSession();
+  // Subscribe to global stores
+  const activeStory = useStore(activeStoryStore);
+  const activeChapter = useStore(activeChapterStore);
+  const isWorkbenchLoading = useStore(isWorkbenchLoadingStore);
+  const workbenchError = useStore(workbenchErrorStore);
 
-  // Data state
-  const [story, setStory] = useState<Story | null>(null);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [loreEntries, setLoreEntries] = useState<LoreEntry[]>([]);
-  const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
-
-  // UI state
+  // Local UI state only
   const [editorContent, setEditorContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [wordCount, setWordCount] = useState(0);
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-
-  // Check if using guest mode
-  const isGuestMode = !isAuthenticated;
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
 
   // Parse storyId and chapterId from URL if not provided as props
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlStoryId = propStoryId || params.get('story');
-    const urlChapterId = propChapterId || params.get('chapter');
 
-    if (urlStoryId && isAuthenticated) {
-      loadStoryData(urlStoryId, urlChapterId);
-    } else if (isGuestMode) {
-      loadGuestStoryData();
+    if (urlStoryId) {
+      loadStoryForWorkbench(urlStoryId);
     }
-  }, [propStoryId, propChapterId, isAuthenticated, isGuestMode]);
+  }, [propStoryId]);
 
-  // Load story data (authenticated user)
-  async function loadStoryData(sid: string, cid?: string | null) {
-    try {
-      // Load story
-      const storyData = await storiesApi.getById(sid);
-      if (!storyData) {
-        console.error('Story not found');
-        return;
-      }
-      setStory(storyData);
-
-      // Load chapters
-      const chaptersData = await chaptersApi.getAllForStory(sid);
-      setChapters(chaptersData);
-
-      // Load lore entries
-      const loreData = await loreApi.getAllForStory(sid);
-      setLoreEntries(loreData);
-
-      // Set current chapter
-      if (cid) {
-        const chapter = chaptersData.find(ch => ch.id === cid);
-        if (chapter) {
-          setCurrentChapter(chapter);
-          setEditorContent(chapter.content);
-        }
-      } else if (chaptersData.length > 0) {
-        // Default to first chapter if none specified
-        setCurrentChapter(chaptersData[0]);
-        setEditorContent(chaptersData[0].content);
-      } else {
-        // Create first chapter if story has none
-        const newChapter = await chaptersApi.create(sid, 'Chapter 1', 1, '');
-        const updatedChapters = await chaptersApi.getAllForStory(sid);
-        setChapters(updatedChapters);
-        setCurrentChapter(newChapter);
-        setEditorContent('');
-      }
-    } catch (error) {
-      console.error('Failed to load story:', error);
-    }
-  }
-
-  // Load guest story data (non-authenticated user)
-  function loadGuestStoryData() {
-    try {
-      let guestStory = guestDataManager.getStory();
-
-      // Initialize guest story if none exists
-      if (!guestStory) {
-        guestStory = guestDataManager.initializeStory('My Story');
-      }
-
-      // Set story (fake a story object)
-      setStory({
-        id: guestStory.id,
-        userId: 'guest',
-        title: guestStory.title,
-        createdAt: guestStory.createdAt,
-        updatedAt: guestStory.updatedAt,
-      } as Story);
-
-      // Set chapters
-      setChapters(guestStory.chapters);
-
-      // Set lore entries
-      setLoreEntries(guestStory.loreEntries);
-
-      // Set current chapter
-      if (guestStory.chapters.length > 0) {
-        setCurrentChapter(guestStory.chapters[0]);
-        setEditorContent(guestStory.chapters[0].content);
-      }
-
-      // Show upgrade prompt after 30 seconds
-      setTimeout(() => {
-        setShowUpgradePrompt(true);
-      }, 30000);
-    } catch (error) {
-      console.error('Failed to load guest story:', error);
-    }
-  }
-
-  // Handle chapter change
-  async function handleChapterSelect(chapterId: string) {
-    const chapter = chapters.find(ch => ch.id === chapterId);
-    if (chapter) {
-      // Save current chapter first
-      if (currentChapter && editorContent !== currentChapter.content) {
-        if (isAuthenticated) {
-          await chaptersApi.updateContent(currentChapter.id, editorContent);
-        } else {
-          guestDataManager.updateChapterContent(currentChapter.id, editorContent);
-        }
-      }
-
-      // Switch to new chapter
-      setCurrentChapter(chapter);
-      setEditorContent(chapter.content);
-
-      // Update URL without page reload (only for authenticated users)
-      if (isAuthenticated && story) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('chapter', chapterId);
-        window.history.replaceState({}, '', url.toString());
-      }
-    }
-  }
-
-  // Auto-save effect
+  // Handle chapter selection via URL parameter
   useEffect(() => {
-    if (!currentChapter) return;
+    if (activeStory && propChapterId) {
+      selectChapter(propChapterId);
+    }
+  }, [propChapterId, activeStory]);
+
+  // Sync editor content with active chapter
+  useEffect(() => {
+    if (activeChapter) {
+      setEditorContent(activeChapter.content);
+      setTempTitle(activeChapter.title);
+    }
+  }, [activeChapter]);
+
+  // Auto-save effect with debounce
+  useEffect(() => {
+    if (!activeChapter || editorContent === activeChapter.content) return;
 
     const timeoutId = setTimeout(async () => {
-      if (editorContent !== currentChapter.content) {
-        setSaving(true);
-        try {
-          if (isAuthenticated) {
-            await chaptersApi.updateContent(currentChapter.id, editorContent);
-            // Update chapter in state
-            setCurrentChapter({
-              ...currentChapter,
-              content: editorContent,
-              updatedAt: new Date().toISOString(),
-            });
-          } else {
-            guestDataManager.updateChapterContent(currentChapter.id, editorContent);
-            // Update chapter in state
-            setCurrentChapter({
-              ...currentChapter,
-              content: editorContent,
-              updatedAt: new Date().toISOString(),
-            });
-          }
-        } catch (error) {
-          console.error('Failed to save:', error);
-        } finally {
-          setSaving(false);
-        }
+      setSaving(true);
+      try {
+        await updateActiveChapterContent(editorContent);
+      } catch (error) {
+        console.error('Failed to save:', error);
+      } finally {
+        setSaving(false);
       }
     }, 1000);
 
     return () => clearTimeout(timeoutId);
-  }, [editorContent, currentChapter, isAuthenticated]);
+  }, [editorContent, activeChapter]);
 
   // Update word count
   useEffect(() => {
@@ -222,28 +94,64 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
     setWordCount(words);
   }, [editorContent]);
 
-  // Add new chapter
-  async function handleAddChapter() {
-    if (!story) return;
-
-    if (isAuthenticated) {
-      const newChapter = await chaptersApi.create(story.id, `Chapter ${chapters.length + 1}`, chapters.length + 1, '');
-      const updatedChapters = await chaptersApi.getAllForStory(story.id);
-      setChapters(updatedChapters);
-      setCurrentChapter(newChapter);
-      setEditorContent('');
-    } else {
-      const newChapter = guestDataManager.createChapter(`Chapter ${chapters.length + 1}`, chapters.length + 1);
-      const guestStory = guestDataManager.getStory();
-      if (guestStory) {
-        setChapters(guestStory.chapters);
+  // Handle chapter title update
+  const handleTitleUpdate = async () => {
+    if (activeChapter && tempTitle !== activeChapter.title) {
+      try {
+        await chaptersApi.update(activeChapter.id, { title: tempTitle });
+        // Reload story to get updated chapter data
+        if (activeStory) {
+          await loadStoryForWorkbench(activeStory.story.id);
+        }
+      } catch (error) {
+        console.error('Failed to update title:', error);
+        // Revert to original title on error
+        setTempTitle(activeChapter.title);
       }
-      setCurrentChapter(newChapter);
-      setEditorContent('');
     }
+    setEditingTitle(false);
+  };
+
+  // Handle AI text generation
+  const handleAITextGenerated = (generatedText: string) => {
+    if (!activeChapter) return;
+
+    // Append generated text to current content
+    const newContent = editorContent + (editorContent && !editorContent.endsWith('\n') ? '\n\n' : '') + generatedText;
+    setEditorContent(newContent);
+
+    // Auto-save will be triggered by the editorContent change
+  };
+
+  // Loading state
+  if (isWorkbenchLoading) {
+    return (
+      <div className="min-h-screen bg-[#12101D] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#8A2BE2] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#A09CB8]">Loading your story...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!story) {
+  // Error state
+  if (workbenchError) {
+    return (
+      <div className="min-h-screen bg-[#12101D] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-[#EAE6F8] mb-4">Error</h2>
+          <p className="text-[#A09CB8] mb-6">{workbenchError}</p>
+          <a href="/dashboard" className="btn-primary px-6 py-3 rounded-lg inline-block">
+            ← Back to Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // No story state
+  if (!activeStory) {
     return (
       <div className="min-h-screen bg-[#12101D] flex items-center justify-center">
         <div className="text-center">
@@ -262,22 +170,26 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
       <aside className="w-[240px] flex-shrink-0 border-r border-[#3A3651] flex flex-col bg-[#12101D]">
         {/* Story Title */}
         <div className="h-14 flex items-center px-5 border-b border-[#3A3651]">
-          <h1 className="font-bold text-lg truncate" title={story.title}>{story.title}</h1>
+          <h1 className="font-bold text-lg truncate" title={activeStory.story.title}>
+            {activeStory.story.title}
+          </h1>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-6">
           {/* Chapters Section */}
           <div className="px-3">
             <div className="flex items-center justify-between px-2 mb-2">
-              <h2 className="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">Chapters</h2>
+              <h2 className="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">
+                Chapters
+              </h2>
             </div>
             <ul className="flex flex-col gap-0.5">
-              {chapters.map((chapter) => (
+              {activeStory.chapters.map((chapter) => (
                 <li key={chapter.id}>
                   <button
-                    onClick={() => handleChapterSelect(chapter.id)}
+                    onClick={() => selectChapter(chapter.id)}
                     className={`w-full text-left px-3 py-2 text-sm rounded-r-md transition-colors ${
-                      currentChapter?.id === chapter.id
+                      activeChapter?.id === chapter.id
                         ? 'bg-gradient-to-r from-[rgba(138,43,226,0.1)] text-[#EAE6F8] font-medium'
                         : 'text-[#A09CB8] hover:text-[#EAE6F8] hover:bg-[rgba(255,255,255,0.03)]'
                     }`}
@@ -292,11 +204,13 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
           {/* Lorebook Section */}
           <div className="px-3">
             <div className="flex items-center justify-between px-2 mb-3">
-              <h2 className="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">Lorebook</h2>
+              <h2 className="text-xs font-bold text-[#A09CB8] uppercase tracking-wider">
+                Lorebook
+              </h2>
             </div>
             <div className="flex flex-wrap gap-2 px-2">
-              {loreEntries.length > 0 ? (
-                loreEntries.map((entry) => (
+              {activeStory.loreEntries.length > 0 ? (
+                activeStory.loreEntries.map((entry) => (
                   <span
                     key={entry.id}
                     className="bg-[rgba(28,25,41,0.8)] border border-[#3A3651] rounded-full px-2.5 py-1 text-xs font-medium text-[#A09CB8]"
@@ -314,7 +228,7 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
         {/* Add Chapter Button */}
         <div className="p-4 border-t border-[#3A3651]">
           <button
-            onClick={handleAddChapter}
+            onClick={() => addNewChapterToStory(`Chapter ${activeStory.chapters.length + 1}`)}
             className="w-full flex items-center gap-2 text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -327,70 +241,39 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
 
       {/* CENTER PANEL - Editor */}
       <main className="flex-1 flex flex-col relative min-w-0 bg-[#12101D]">
-        {/* Guest Mode Upgrade Banner */}
-        {showUpgradePrompt && isGuestMode && (
-          <div className="bg-gradient-to-r from-[rgba(138,43,226,0.2)] to-[rgba(74,0,224,0.2)] border-b border-[#8A2BE2] px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-[#8A2BE2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className="text-sm text-[#EAE6F8]">Your work is saved locally. Sign up to save it permanently!</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowUpgradePrompt(false)}
-                className="text-sm text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"
-              >
-                Dismiss
-              </button>
-              <a
-                href="/signup"
-                className="btn-primary px-4 py-1.5 rounded-lg text-sm font-medium"
-              >
-                Sign Up Free
-              </a>
-            </div>
-          </div>
-        )}
-
         {/* Top Bar */}
         <header className="h-14 flex items-center justify-between px-8 z-10">
-          <input
-            type="text"
-            value={currentChapter?.title || ''}
-            onChange={(e) => {
-              if (currentChapter) {
-                setCurrentChapter({ ...currentChapter, title: e.target.value });
-              }
-            }}
-            onBlur={async () => {
-              if (currentChapter) {
-                if (isAuthenticated) {
-                  await chaptersApi.update(currentChapter.id, { title: currentChapter.title });
-                } else {
-                  guestDataManager.updateChapterTitle(currentChapter.id, currentChapter.title);
-                  // Refresh chapters to get updated data
-                  const guestStory = guestDataManager.getStory();
-                  if (guestStory) {
-                    setChapters(guestStory.chapters);
-                  }
+          {editingTitle ? (
+            <input
+              type="text"
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
+              onBlur={handleTitleUpdate}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleTitleUpdate();
+                } else if (e.key === 'Escape') {
+                  setTempTitle(activeChapter?.title || '');
+                  setEditingTitle(false);
                 }
-              }
-            }}
-            className="bg-transparent border-none outline-none text-lg font-bold text-[#A09CB8] hover:text-[#EAE6F8] focus:text-[#EAE6F8] transition-colors w-1/2"
-          />
+              }}
+              autoFocus
+              className="bg-[rgba(28,25,41,0.5)] border border-[#8A2BE2] rounded-lg px-3 py-1 text-lg font-bold text-[#EAE6F8] outline-none w-1/2"
+            />
+          ) : (
+            <button
+              onClick={() => setEditingTitle(true)}
+              className="text-lg font-bold text-[#A09CB8] hover:text-[#EAE6F8] transition-colors w-1/2 text-left"
+            >
+              {activeChapter?.title || 'Untitled'}
+            </button>
+          )}
           <div className="text-xs font-medium text-[#A09CB8] bg-[rgba(28,25,41,0.5)] px-3 py-1 rounded-full border border-[#3A3651] flex items-center gap-2">
             <span>{wordCount.toLocaleString()} words</span>
             {saving && (
               <>
                 <span>•</span>
                 <span>Saving...</span>
-              </>
-            )}
-            {isGuestMode && (
-              <>
-                <span>•</span>
-                <span className="text-[#8A2BE2]">Guest Mode</span>
               </>
             )}
           </div>
@@ -410,12 +293,16 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
 
       {/* RIGHT PANEL - AI Control Panel */}
       <aside className="w-[320px] flex-shrink-0 border-l border-[#3A3651] flex flex-col bg-[#12101D]">
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-          {/* Placeholder for AI Generator */}
-          <div className="glass-panel p-6 rounded-xl text-center">
-            <p className="text-[#A09CB8] text-sm mb-4">AI Assistant</p>
-            <p className="text-xs text-[#3A3651]">AI generation features will be integrated here.</p>
-          </div>
+        <div className="flex-1 overflow-y-auto p-5">
+          <AIGenerator
+            onTextGenerated={handleAITextGenerated}
+            initialText={activeChapter?.content || ''}
+            lorebook={activeStory.loreEntries.map(entry => ({
+              type: entry.type,
+              name: entry.name,
+              description: entry.description,
+            }))}
+          />
         </div>
       </aside>
     </div>
