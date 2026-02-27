@@ -6,7 +6,7 @@ const title = "AI Fanfiction Generator";
 const isAuthenticated = !!Astro.locals.user?.id;
 
 // Determine workbench link
-const workbenchLink = isAuthenticated ? '/dashboard' : '/workbench';
+const workbenchLink = isAuthenticated ? '/dashboard' : '/guest';
 ---
 
 <!doctype html>

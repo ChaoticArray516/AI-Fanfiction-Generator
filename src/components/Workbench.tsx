@@ -23,7 +23,7 @@ import {
   type StoryWithDetails,
   type Chapter,
 } from '../lib/stores';
-import { chaptersApi } from '../lib/apiService';
+import { chaptersService } from '../lib/dataService';
 import { AIGenerator } from './AIGenerator';
 
 interface WorkbenchProps {
@@ -98,7 +98,7 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
   const handleTitleUpdate = async () => {
     if (activeChapter && tempTitle !== activeChapter.title) {
       try {
-        await chaptersApi.update(activeChapter.id, { title: tempTitle });
+        await chaptersService.update(activeChapter.id, { title: tempTitle });
         // Reload story to get updated chapter data
         if (activeStory) {
           await loadStoryForWorkbench(activeStory.story.id);

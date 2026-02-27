@@ -30,8 +30,12 @@ if (fullPath[0] === 'workbench' && fullPath.length >= 2) {
 // According to middleware and types, Astro.locals has structure: { user, session }
 const isAuthenticated = Astro.locals.user?.id;
 
-// Authentication guard: redirect to signin if not authenticated
-if (!isAuthenticated) {
+// If not authenticated, check if this is a guest story access
+// Guest story IDs start with "guest_story_"
+const isGuestStory = storyId?.startsWith('guest_story_');
+
+// Authentication guard: only redirect if not authenticated AND not a guest story
+if (!isAuthenticated && !isGuestStory) {
   return Astro.redirect('/signin');
 }
 

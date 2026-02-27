@@ -274,6 +274,14 @@ const title = "Settings - AI Fanfiction";
           <span class="font-medium text-sm">Notifications</span>
         </button>
       </div>
+
+      <!-- Sign Out Button -->
+      <div class="mt-auto p-6 border-t border-[#3A3651]">
+        <button id="sign-out-btn" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-[#E05A5A] hover:text-red-400 hover:bg-[rgba(224,90,90,0.1)] transition-all">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          Sign Out
+        </button>
+      </div>
     </aside>
 
     <!-- RIGHT CONTENT PANEL -->
@@ -460,7 +468,86 @@ const title = "Settings - AI Fanfiction";
 
           <!-- PLACEHOLDER TABS (Account, Billing, Notifications) -->
           <div id="tab-account" class="tab-content hidden"><h1 class="text-2xl font-extrabold mb-8">Account & Security</h1><p class="text-[#A09CB8] text-sm">Update your password, manage connected accounts, and secure your data.</p></div>
-          <div id="tab-billing" class="tab-content hidden"><h1 class="text-2xl font-extrabold mb-8">Subscription & Billing</h1><p class="text-[#A09CB8] text-sm">Manage your Pro plan, view invoices, and upgrade your token limits.</p></div>
+
+          <!-- TAB: SUBSCRIPTION & BILLING -->
+          <div id="tab-billing" class="tab-content hidden">
+            <h1 class="text-2xl font-extrabold mb-8">Subscription & Billing</h1>
+
+            <!-- Loading State -->
+            <div id="billing-loading" class="flex items-center justify-center py-12">
+              <div class="flex flex-col items-center gap-4">
+                <i data-lucide="loader-2" class="w-8 h-8 text-[#8A2BE2] animate-spin"></i>
+                <span class="text-sm text-[#A09CB8]">Loading subscription information...</span>
+              </div>
+            </div>
+
+            <!-- Content (hidden by default) -->
+            <div id="billing-content" class="hidden">
+              <!-- Current Plan Card -->
+              <div class="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border border-[#8A2BE2] rounded-xl p-6 mb-8">
+                <div class="flex items-start justify-between">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                      <span id="plan-badge" class="px-3 py-1 rounded-full bg-[#8A2BE2] text-xs font-bold uppercase tracking-wide">Free Tier</span>
+                      <h2 id="plan-name" class="text-xl font-bold text-[#EAE6F8]">Free Plan</h2>
+                    </div>
+                    <p class="text-sm text-[#A09CB8]">You're currently on the free tier with monthly credit resets.</p>
+                  </div>
+                  <a href="/pricing" class="btn-primary px-6 py-2 rounded-lg text-sm flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    Upgrade to Pro
+                  </a>
+                </div>
+              </div>
+
+              <!-- Credits Section -->
+              <div class="bg-[rgba(28,25,41,0.5)] border border-[#3A3651] rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-bold text-[#EAE6F8] mb-4">Credits Balance</h3>
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <p id="credits-amount" class="text-3xl font-extrabold text-gradient">10,000</p>
+                    <p class="text-xs text-[#A09CB8] mt-1">AI generation credits available</p>
+                  </div>
+                  <div class="text-right">
+                    <p id="credits-reset" class="text-sm text-[#A09CB8]">Resets in 30 days</p>
+                  </div>
+                </div>
+                <!-- Progress bar -->
+                <div class="w-full bg-[#12101D] rounded-full h-2 overflow-hidden">
+                  <div id="credits-bar" class="bg-gradient-to-r from-[#8A2BE2] to-[#4A00E0] h-full rounded-full transition-all" style="width: 100%"></div>
+                </div>
+              </div>
+
+              <!-- Usage Stats -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-[rgba(28,25,41,0.5)] border border-[#3A3651] rounded-xl p-5">
+                  <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-[#8A2BE2]"></i>
+                    <span class="text-sm font-bold text-[#EAE6F8]">Stories Created</span>
+                  </div>
+                  <p id="stories-count" class="text-2xl font-bold text-[#EAE6F8]">-</p>
+                </div>
+                <div class="bg-[rgba(28,25,41,0.5)] border border-[#3A3651] rounded-xl p-5">
+                  <div class="flex items-center gap-3 mb-2">
+                    <i data-lucide="zap" class="w-5 h-5 text-[#8A2BE2]"></i>
+                    <span class="text-sm font-bold text-[#EAE6F8]">Generations This Month</span>
+                  </div>
+                  <p id="generations-count" class="text-2xl font-bold text-[#EAE6F8]">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Error State (hidden by default) -->
+            <div id="billing-error" class="hidden">
+              <div class="bg-[rgba(224,90,90,0.1)] border border-[#E05A5A] rounded-xl p-6 text-center">
+                <i data-lucide="alert-circle" class="w-12 h-12 text-[#E05A5A] mx-auto mb-4"></i>
+                <h3 class="text-lg font-bold text-[#EAE6F8] mb-2">Unable to Load Subscription</h3>
+                <p class="text-sm text-[#A09CB8] mb-4">Please refresh the page or try again later.</p>
+                <button onclick="loadUserData()" class="btn-secondary px-6 py-2 rounded-lg text-sm">Retry</button>
+              </div>
+            </div>
+          </div>
+
           <div id="tab-notifications" class="tab-content hidden"><h1 class="text-2xl font-extrabold mb-8">Notifications</h1><p class="text-[#A09CB8] text-sm">Control email digests, community alerts, and system messages.</p></div>
 
         </div>
@@ -525,6 +612,112 @@ const title = "Settings - AI Fanfiction";
 
         lucide.createIcons();
       }
+
+      // Load user subscription data
+      async function loadUserData() {
+        const billingLoading = document.getElementById('billing-loading');
+        const billingContent = document.getElementById('billing-content');
+        const billingError = document.getElementById('billing-error');
+
+        try {
+          const response = await fetch('/api/user/subscription');
+
+          if (response.ok) {
+            const data = await response.json();
+
+            // Hide loading, show content
+            billingLoading.classList.add('hidden');
+            billingContent.classList.remove('hidden');
+            billingError.classList.add('hidden');
+
+            // Update UI with data
+            const planBadge = document.getElementById('plan-badge');
+            const planName = document.getElementById('plan-name');
+            const creditsAmount = document.getElementById('credits-amount');
+            const creditsReset = document.getElementById('credits-reset');
+
+            // Set plan info
+            planBadge.textContent = data.subscription.charAt(0).toUpperCase() + data.subscription.slice(1);
+            planName.textContent = data.subscription.charAt(0).toUpperCase() + data.subscription.slice(1) + ' Plan';
+
+            if (data.subscription === 'pro') {
+              planBadge.classList.remove('bg-[#8A2BE2]');
+              planBadge.classList.add('bg-gradient-to-r', 'from-amber-400', 'to-orange-500');
+            }
+
+            // Set credits
+            creditsAmount.textContent = data.credits.toLocaleString();
+
+            // Calculate reset date
+            if (data.creditsResetAt) {
+              const resetDate = new Date(data.creditsResetAt);
+              const now = new Date();
+              const daysUntilReset = Math.ceil((resetDate - now) / (1000 * 60 * 60 * 24));
+              creditsReset.textContent = `Resets in ${daysUntilReset} days`;
+            }
+
+            // Update progress bar (assuming max 10,000 for free tier)
+            const creditsBar = document.getElementById('credits-bar');
+            const percentage = Math.min((data.credits / 10000) * 100, 100);
+            creditsBar.style.width = percentage + '%';
+
+            // Reinitialize icons
+            lucide.createIcons();
+          } else {
+            throw new Error('Failed to load user data');
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+
+          // Hide loading, show error
+          billingLoading.classList.add('hidden');
+          billingContent.classList.add('hidden');
+          billingError.classList.remove('hidden');
+        }
+      }
+
+      // Sign out function
+      async function signOut() {
+        try {
+          const signOutBtn = document.getElementById('sign-out-btn');
+
+          // Show loading state
+          signOutBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Signing out...';
+          lucide.createIcons();
+
+          // Call sign out API
+          const response = await fetch('/api/auth/sign-out', {
+            method: 'POST',
+          });
+
+          if (response.ok) {
+            // Redirect to home page
+            window.location.href = '/';
+          } else {
+            throw new Error('Sign out failed');
+          }
+        } catch (error) {
+          console.error('Error signing out:', error);
+
+          // Reset button and show error
+          const signOutBtn = document.getElementById('sign-out-btn');
+          signOutBtn.innerHTML = '<i data-lucide="alert-circle" class="w-4 h-4"></i> Error - Try Again';
+          lucide.createIcons();
+
+          setTimeout(() => {
+            signOutBtn.innerHTML = '<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out';
+            lucide.createIcons();
+          }, 3000);
+        }
+      }
+
+      // Event listener for sign out button
+      document.getElementById('sign-out-btn').addEventListener('click', signOut);
+
+      // Load user data when page loads
+      window.addEventListener('DOMContentLoaded', () => {
+        loadUserData();
+      });
     </script>
   </body>
 </html>

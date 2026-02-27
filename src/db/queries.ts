@@ -4,7 +4,7 @@
  * Server-side database operations using Drizzle ORM
  */
 
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { db } from './index';
 import * as schema from './schema';
 import { createId } from '@paralleldrive/cuid2';
@@ -237,7 +237,7 @@ export const userProfileDbService = {
   async addCredits(userId: string, amount: number) {
     await db.update(schema.userProfiles)
       .set({
-        credits: db.raw(`credits + ${amount}`),
+        credits: sql`${schema.userProfiles.credits} + ${amount}`,
         updatedAt: new Date(),
       })
       .where(eq(schema.userProfiles.id, userId));

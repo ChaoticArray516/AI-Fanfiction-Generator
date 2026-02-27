@@ -272,4 +272,16 @@ export const guestDataManager = {
   getDataForMigration(): GuestStory | null {
     return this.getStory();
   },
+
+  /**
+   * Get or create guest story
+   * Returns the existing guest story or creates a new one if none exists
+   */
+  getOrCreateGuestStory(): GuestStory {
+    const story = this.getStory();
+    if (story) {
+      return story;
+    }
+    return this.initializeStory();
+  },
 };

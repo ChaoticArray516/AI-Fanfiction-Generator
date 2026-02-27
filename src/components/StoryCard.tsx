@@ -4,7 +4,7 @@
  * Displays a single story card with title, dates, and action buttons
  */
 
-import type { Story } from '../lib/db.ts';
+import type { Story } from '../lib/stores';
 
 interface StoryCardProps {
   story: Story;

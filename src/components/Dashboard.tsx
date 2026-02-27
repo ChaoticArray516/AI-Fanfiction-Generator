@@ -8,7 +8,7 @@ import { useStore } from '@nanostores/react';
 import { useEffect, useState } from 'react';
 import { storiesStore, isLoadingStore, errorStore, loadStories, addNewStory, deleteStory, clearError } from '../lib/stores';
 import { StoryCard } from './StoryCard';
-import type { Story } from '../lib/db';
+import type { Story } from '../lib/stores';
 
 export function Dashboard() {
   const stories = useStore(storiesStore);

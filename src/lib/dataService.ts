@@ -22,8 +22,8 @@ export type { Story, Chapter, LoreEntry } from './apiService';
 function isAuthenticated(): boolean {
   try {
     // Check for session token or user data
-    return !!localStorage.getItem('better-auth.session_token') ||
-           !!document.cookie.includes('better-auth.session_token');
+    return !!localStorage.getItem('fanfic.session_token') ||
+           !!document.cookie.includes('fanfic.session_token');
   } catch {
     return false;
   }

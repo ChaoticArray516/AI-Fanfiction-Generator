@@ -1,0 +1,62 @@
+---
+/**
+ * Guest Entry Page
+ *
+ * This page redirects guest users to the workbench.
+ * Guest data is handled client-side using localStorage.
+ */
+
+const description = "Redirecting to workbench...";
+const title = "Guest Entry - AI Fanfiction";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <script is:inline>
+      // Guest data storage key
+      const GUEST_STORAGE_KEY = 'guest_story';
+
+      // Generate a unique ID
+      function generateId(prefix) {
+        return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      // Get or create guest story
+      function getOrCreateGuestStory() {
+        const data = localStorage.getItem(GUEST_STORAGE_KEY);
+
+        if (data) {
+          try {
+            return JSON.parse(data);
+          } catch (error) {
+            console.error('Error parsing guest story:', error);
+          }
+        }
+
+        // Create new guest story
+        const newStory = {
+          id: generateId('guest_story'),
+          title: 'Untitled Story',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          chapters: [],
+          loreEntries: [],
+        };
+
+        localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(newStory));
+        return newStory;
+      }
+
+      // Get or create guest story and redirect
+      const guestStory = getOrCreateGuestStory();
+      window.location.href = `/workbench/${guestStory.id}`;
+    </script>
+  </body>
+</html>

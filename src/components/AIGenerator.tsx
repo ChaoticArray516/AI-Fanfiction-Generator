@@ -18,6 +18,7 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
   const [sceneDirection, setSceneDirection] = useState('');
   const [style, setStyle] = useState('Cinematic');
   const [creativity, setCreativity] = useState(0.7);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   // 构建上下文
@@ -62,6 +63,12 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
 
         // 通知父组件
         onTextGenerated?.(completion);
+      }
+    },
+    onError: (error) => {
+      // 检查是否是点数不足错误 (402)
+      if (error.message.includes('402') || error.message.includes('Insufficient credits')) {
+        setShowUpgradeModal(true);
       }
     },
   });
@@ -203,6 +210,77 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowUpgradeModal(false)}
+        >
+          <div
+            className="glass-panel p-8 rounded-xl max-w-md w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-[#EAE6F8] mb-3">
+              Upgrade to Pro
+            </h2>
+
+            {/* Message */}
+            <p className="text-[#A09CB8] mb-6 leading-relaxed">
+              You've run out of AI generation credits. Upgrade to Pro for unlimited access to all features!
+            </p>
+
+            {/* Benefits */}
+            <div className="text-left mb-8 space-y-3">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">Unlimited AI generations</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">Access to advanced AI models</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">Priority support & faster generation</span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3">
+              <a
+                href="/pricing"
+                className="btn-primary w-full px-6 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2"
+              >
+                Upgrade Now
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-sm text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
