@@ -26,9 +26,14 @@ if (fullPath[0] === 'workbench' && fullPath.length >= 2) {
   }
 }
 
-// Redirect to signin if accessing workbench directly without being authenticated
-// Note: We check if user is authenticated on the server side
-const isAuthenticated = Astro.locals?.session?.user?.id;
+// Check if user is authenticated
+// According to middleware and types, Astro.locals has structure: { user, session }
+const isAuthenticated = Astro.locals.user?.id;
+
+// Authentication guard: redirect to signin if not authenticated
+if (!isAuthenticated) {
+  return Astro.redirect('/signin');
+}
 
 // If no storyId provided, redirect to dashboard
 if (!storyId) {

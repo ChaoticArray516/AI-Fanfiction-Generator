@@ -276,8 +276,7 @@ export const chaptersService = {
       return chaptersApi.delete(id);
     } else {
       // Guest mode: delete chapter from guest story
-      // Note: This would need to be implemented in guestDataManager
-      console.warn('Delete chapter not implemented in guest mode');
+      guestDataManager.deleteChapter(id);
     }
   },
 };
@@ -344,8 +343,7 @@ export const loreService = {
       return loreApi.update(id, data);
     } else {
       // Guest mode: update lore entry in guest story
-      // Note: This would need to be implemented in guestDataManager
-      console.warn('Update lore entry not implemented in guest mode');
+      guestDataManager.updateLoreEntry(id, data);
     }
   },
 
@@ -357,8 +355,7 @@ export const loreService = {
       return loreApi.delete(id);
     } else {
       // Guest mode: delete lore entry from guest story
-      // Note: This would need to be implemented in guestDataManager
-      console.warn('Delete lore entry not implemented in guest mode');
+      guestDataManager.deleteLoreEntry(id);
     }
   },
 };

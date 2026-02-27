@@ -179,3 +179,67 @@ export const loreDbService = {
     await db.delete(schema.loreEntries).where(eq(schema.loreEntries.id, id));
   },
 };
+
+/**
+ * User Profiles
+ */
+export const userProfileDbService = {
+  /**
+   * Create a new user profile with default subscription
+   */
+  async create(userId: string) {
+    const newUserProfile: schema.NewUserProfile = {
+      id: userId,
+      subscription: 'free',
+      credits: 10000,
+      creditsResetAt: new Date(),
+    };
+    await db.insert(schema.userProfiles).values(newUserProfile);
+    return newUserProfile;
+  },
+
+  /**
+   * Get user profile by user ID
+   */
+  async getByUserId(userId: string) {
+    const profiles = await db.select()
+      .from(schema.userProfiles)
+      .where(eq(schema.userProfiles.id, userId))
+      .limit(1);
+    return profiles[0] || null;
+  },
+
+  /**
+   * Deduct credits from user profile
+   * Throws error if insufficient credits
+   */
+  async deductCredits(userId: string, amount: number) {
+    const profile = await this.getByUserId(userId);
+    if (!profile) {
+      throw new Error('User profile not found');
+    }
+
+    if (profile.credits < amount) {
+      throw new Error('Insufficient credits');
+    }
+
+    await db.update(schema.userProfiles)
+      .set({
+        credits: profile.credits - amount,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.userProfiles.id, userId));
+  },
+
+  /**
+   * Add credits to user profile (for purchases or admin actions)
+   */
+  async addCredits(userId: string, amount: number) {
+    await db.update(schema.userProfiles)
+      .set({
+        credits: db.raw(`credits + ${amount}`),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.userProfiles.id, userId));
+  },
+};

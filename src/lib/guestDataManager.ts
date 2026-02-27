@@ -160,6 +160,21 @@ export const guestDataManager = {
   },
 
   /**
+   * Delete a chapter
+   */
+  deleteChapter(id: string): void {
+    const story = this.getStory();
+    if (!story) return;
+
+    const chapterIndex = story.chapters.findIndex(ch => ch.id === id);
+    if (chapterIndex !== -1) {
+      story.chapters.splice(chapterIndex, 1);
+      story.updatedAt = new Date().toISOString();
+      this.saveStory(story);
+    }
+  },
+
+  /**
    * Get all lore entries
    */
   getLoreEntries(): GuestLoreEntry[] {
@@ -191,6 +206,40 @@ export const guestDataManager = {
     this.saveStory(story);
 
     return newEntry;
+  },
+
+  /**
+   * Update a lore entry
+   */
+  updateLoreEntry(id: string, data: { name?: string; type?: string; description?: string }): void {
+    const story = this.getStory();
+    if (!story) return;
+
+    const entry = story.loreEntries.find(e => e.id === id);
+    if (entry) {
+      // Update only the fields provided in data
+      if (data.name !== undefined) entry.name = data.name;
+      if (data.type !== undefined) entry.type = data.type;
+      if (data.description !== undefined) entry.description = data.description;
+      entry.updatedAt = new Date().toISOString();
+      story.updatedAt = new Date().toISOString();
+      this.saveStory(story);
+    }
+  },
+
+  /**
+   * Delete a lore entry
+   */
+  deleteLoreEntry(id: string): void {
+    const story = this.getStory();
+    if (!story) return;
+
+    const entryIndex = story.loreEntries.findIndex(e => e.id === id);
+    if (entryIndex !== -1) {
+      story.loreEntries.splice(entryIndex, 1);
+      story.updatedAt = new Date().toISOString();
+      this.saveStory(story);
+    }
   },
 
   /**

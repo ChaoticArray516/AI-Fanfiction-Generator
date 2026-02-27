@@ -48,6 +48,19 @@ export const loreEntries = pgTable('lore_entries', {
 });
 
 /**
+ * User Profiles table
+ * Represents user subscription and credits information
+ */
+export const userProfiles = pgTable('user_profiles', {
+  id: text('id').primaryKey(), // Same as better-auth user.id
+  subscription: text('subscription').notNull().default('free'), // 'free' | 'pro' | 'premium'
+  credits: integer('credits').notNull().default(10000), // AI credits
+  creditsResetAt: timestamp('credits_reset_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+/**
  * Relations
  * Define relationships between tables
  */
@@ -77,3 +90,5 @@ export type Chapter = typeof chapters.$inferSelect;
 export type NewChapter = typeof chapters.$inferInsert;
 export type LoreEntry = typeof loreEntries.$inferSelect;
 export type NewLoreEntry = typeof loreEntries.$inferInsert;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type NewUserProfile = typeof userProfiles.$inferInsert;
