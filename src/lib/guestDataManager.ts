@@ -35,6 +35,8 @@ interface GuestLoreEntry {
 }
 
 const GUEST_STORAGE_KEY = 'guest_story';
+const GUEST_CREDITS_KEY = 'guest_credits';
+const INITIAL_CREDITS = 10;
 
 /**
  * Guest Data Manager
@@ -283,5 +285,47 @@ export const guestDataManager = {
       return story;
     }
     return this.initializeStory();
+  },
+
+  /**
+   * Get guest credits
+   * Returns the current number of credits (default to INITIAL_CREDITS if not set)
+   */
+  getCredits(): number {
+    try {
+      const credits = localStorage.getItem(GUEST_CREDITS_KEY);
+      return credits !== null ? parseInt(credits, 10) : INITIAL_CREDITS;
+    } catch (error) {
+      console.error('Error reading guest credits:', error);
+      return INITIAL_CREDITS;
+    }
+  },
+
+  /**
+   * Use one credit
+   * Decrements the credit count by 1
+   * Returns the new credit count, or 0 if already at 0
+   */
+  useCredit(): number {
+    const currentCredits = this.getCredits();
+    if (currentCredits <= 0) {
+      return 0;
+    }
+    const newCredits = currentCredits - 1;
+    try {
+      localStorage.setItem(GUEST_CREDITS_KEY, newCredits.toString());
+      return newCredits;
+    } catch (error) {
+      console.error('Error using guest credit:', error);
+      throw new Error('Failed to use credit');
+    }
+  },
+
+  /**
+   * Check if guest has credits available
+   * Returns true if credits > 0, false otherwise
+   */
+  hasCredits(): boolean {
+    return this.getCredits() > 0;
   },
 };

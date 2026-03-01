@@ -25,6 +25,7 @@ import {
 } from '../lib/stores';
 import { chaptersService } from '../lib/dataService';
 import { AIGenerator } from './AIGenerator';
+import { isAuthenticated } from '../lib/dataService';
 
 interface WorkbenchProps {
   storyId?: string;
@@ -44,6 +45,7 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
   const [wordCount, setWordCount] = useState(0);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
+  const [isGuest, setIsGuest] = useState(false);
 
   // Parse storyId and chapterId from URL if not provided as props
   useEffect(() => {
@@ -53,6 +55,9 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
     if (urlStoryId) {
       loadStoryForWorkbench(urlStoryId);
     }
+
+    // Check if user is a guest
+    setIsGuest(!isAuthenticated());
   }, [propStoryId]);
 
   // Handle chapter selection via URL parameter
@@ -165,8 +170,30 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
   }
 
   return (
-    <div className="min-h-screen bg-[#12101D] flex">
-      {/* LEFT PANEL - Navigator */}
+    <>
+      {/* Guest Banner - Only shown to non-authenticated users */}
+      {isGuest && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-cyan-600 px-4 py-2.5 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm">
+            <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-white font-medium">
+              Your work is not saved.{' '}
+              <a
+                href="/signup"
+                className="underline font-bold hover:text-blue-100 transition-colors"
+              >
+                Create an account
+              </a>{' '}
+              to save your progress.
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className={`min-h-screen bg-[#12101D] flex ${isGuest ? 'pt-12' : ''}`}>
+        {/* LEFT PANEL - Navigator */}
       <aside className="w-[240px] flex-shrink-0 border-r border-[#3A3651] flex flex-col bg-[#12101D]">
         {/* Story Title */}
         <div className="h-14 flex items-center px-5 border-b border-[#3A3651]">
@@ -305,6 +332,7 @@ export function Workbench({ storyId: propStoryId, chapterId: propChapterId }: Wo
           />
         </div>
       </aside>
-    </div>
+      </div>
+    </>
   );
 }

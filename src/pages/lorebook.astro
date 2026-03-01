@@ -377,7 +377,7 @@ const title = "Lorebook - AI Fanfiction";
         if (!currentStoryId) return;
 
         try {
-          const response = await fetch(`/api/lore?storyId=${currentStoryId}`);
+          const response = await fetch(`/api/stories/${currentStoryId}/lore`);
           if (response.ok) {
             loreEntries = await response.json();
             renderEntryList();
@@ -533,11 +533,10 @@ const title = "Lorebook - AI Fanfiction";
 
           if (isNewEntry || !currentEntryId) {
             // Create new entry
-            const response = await fetch('/api/lore', {
+            const response = await fetch(`/api/stories/${currentStoryId}/lore`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                storyId: currentStoryId,
                 name,
                 type,
                 description,

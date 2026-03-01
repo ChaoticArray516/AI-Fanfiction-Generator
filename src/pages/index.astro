@@ -1,6 +1,10 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GlobalNav from '../components/GlobalNav.astro';
+
 const description = "AI-powered fanfiction writing assistant";
 const title = "AI Fanfiction Generator";
+const currentPath = Astro.url.pathname;
 
 // Check if user is authenticated
 const isAuthenticated = !!Astro.locals.user?.id;
@@ -9,426 +13,260 @@ const isAuthenticated = !!Astro.locals.user?.id;
 const workbenchLink = isAuthenticated ? '/dashboard' : '/guest';
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
+<BaseLayout {title} {description}>
+  <slot slot="navbar">
+    <GlobalNav currentPath={currentPath} />
+  </slot>
 
-    <!-- Google Fonts: Manrope -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+    <!-- Animated Nebula Background -->
+    <div class="nebula-container">
+      <div class="nebula-blob blob-1"></div>
+      <div class="nebula-blob blob-2"></div>
+      <div class="stars"></div>
+    </div>
 
-    <!-- Tailwind CSS -->
-    <script is:inline src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Tailwind Configuration -->
-    <script is:inline define:vars={{ colors: { primary: { bg: '#12101D', text: '#EAE6F8' }, secondary: { bg: 'rgba(28, 25, 41, 0.75)', text: '#A09CB8' }, border: '#3A3651', danger: '#E05A5A', success: '#5AE08A' } } }>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                bg: '#12101D',
-                text: '#EAE6F8',
-              },
-              secondary: {
-                bg: 'rgba(28, 25, 41, 0.75)',
-                text: '#A09CB8',
-              },
-              border: '#3A3651',
-              danger: '#E05A5A',
-              success: '#5AE08A'
-            },
-            fontFamily: {
-              sans: ['Manrope', 'sans-serif'],
-            }
-          }
-        }
-      }
-    </script>
-
-    <style is:global>
-      /* Global Styles */
-      body {
-        background-color: #12101D;
-        color: #EAE6F8;
-        font-family: 'Manrope', sans-serif;
-        line-height: 1.7;
-        overflow-x: hidden;
-        margin: 0;
-        padding: 0;
-      }
-
-      /* Core Gradient & Text Effects */
-      .text-gradient {
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        color: transparent;
-      }
-
-      .bg-accent-gradient {
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-      }
-
-      /* Primary Button */
-      .btn-primary {
-        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
-        transition: all 0.2s ease-out;
-        color: #EAE6F8;
-        font-weight: 700;
-      }
-      .btn-primary:hover {
-        filter: brightness(1.1);
-        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
-      }
-
-      /* Secondary Button */
-      .btn-secondary {
-        background: transparent;
-        border: 1px solid #3A3651;
-        transition: all 0.2s ease-out;
-        color: #EAE6F8;
-        font-weight: 500;
-      }
-      .btn-secondary:hover {
-        border-color: #8A2BE2;
-        box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
-      }
-
-      /* Glassmorphism Card */
-      .glass-card {
-        background: rgba(28, 25, 41, 0.75);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid #3A3651;
-        border-radius: 12px;
-        transition: all 0.2s ease-out;
-      }
-      .glass-card:hover {
-        border-color: #8A2BE2;
-        box-shadow: 0 0 20px rgba(138, 43, 226, 0.15);
-        transform: translateY(-4px);
-      }
-
-      /* Icon Hover Transition */
-      .icon-transition {
-        color: #A09CB8;
-        transition: all 0.2s ease-out;
-      }
-      a:hover .icon-transition, .glass-card:hover .icon-transition {
-        color: #EAE6F8;
-      }
-
-      /* Hide Scrollbar */
-      .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .hide-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-
-      /* Nebula Animation */
-      .nebula-container {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        overflow: hidden;
-        z-index: -1;
-        background: #12101D;
-      }
-      .nebula-blob {
-        position: absolute;
-        filter: blur(90px);
-        opacity: 0.5;
-        animation: swirl 20s infinite linear alternate;
-      }
-      .blob-1 {
-        width: 600px; height: 600px;
-        background: #2a0845;
-        top: -200px; left: -100px;
-      }
-      .blob-2 {
-        width: 500px; height: 500px;
-        background: #0f1c4d;
-        bottom: -100px; right: -50px;
-        animation-delay: -5s;
-      }
-
-      @keyframes swirl {
-        0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-        100% { transform: translate(100px, 50px) rotate(10deg) scale(1.1); }
-      }
-
-      /* Particle Stars Animation */
-      .stars {
-        position: absolute;
-        width: 100%; height: 100%;
-        background-image: radial-gradient(2px 2px at 20px 30px, #EAE6F8, rgba(0,0,0,0)), radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), rgba(0,0,0,0)), radial-gradient(2px 2px at 50px 160px, rgba(255,255,255,0.5), rgba(0,0,0,0)), radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.5), rgba(0,0,0,0));
-        background-repeat: repeat;
-        background-size: 200px 200px;
-        animation: drift 100s linear infinite;
-        opacity: 0.3;
-      }
-      @keyframes drift {
-        from { transform: translateY(0); }
-        to { transform: translateY(-1000px); }
-      }
-
-      /* Floating Quill Animation */
-      .floating-quill {
-        animation: float 4s ease-in-out infinite;
-        filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6));
-      }
-      @keyframes float {
-        0% { transform: translateY(0px) rotate(-10deg); }
-        50% { transform: translateY(-15px) rotate(-5deg); }
-        100% { transform: translateY(0px) rotate(-10deg); }
-      }
-      .magic-sparkle {
-        animation: pulse-glow 2s infinite alternate;
-      }
-      @keyframes pulse-glow {
-        0% { opacity: 0.4; transform: scale(0.8); }
-        100% { opacity: 1; transform: scale(1.2); }
-      }
-    </style>
-
-    <!-- Lucide Icons -->
-    <script is:inline src="https://unpkg.com/lucide@latest"></script>
-  </head>
-  <body class="antialiased">
-
-    <!-- Navigation Bar -->
-    <nav class="fixed w-full z-50 top-0 left-0 border-b border-[#3A3651] bg-[#12101D]/80 backdrop-blur-md">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="feather" class="w-6 h-6 text-gradient bg-accent-gradient" style="-webkit-background-clip: text; color: transparent;"></i>
-          <span class="font-bold text-lg tracking-wide">AI Fanfiction</span>
-        </div>
-        <div class="hidden md:flex items-center gap-6 font-medium text-sm">
-          <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
-          <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
-          <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
-        </div>
-        <div class="flex items-center gap-4">
-          <a href="/signin" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
-          <a href="/signup" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center pt-20 overflow-hidden">
-      <!-- Animated Nebula Background -->
-      <div class="nebula-container">
-        <div class="nebula-blob blob-1"></div>
-        <div class="nebula-blob blob-2"></div>
-        <div class="stars"></div>
-      </div>
-
-      <div class="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
-        <!-- Left: Text Content -->
-        <div class="flex-1 text-center lg:text-left pt-12 lg:pt-0">
-          <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight mb-6">
-            Craft Worlds with Words.<br/>
-            <span class="text-gradient">Your AI Co-pilot for Epic Fanfiction.</span>
-          </h1>
-          <p class="text-lg md:text-xl text-[#A09CB8] mb-10 max-w-2xl mx-auto lg:mx-0 font-medium">
-            From character creation to multi-chapter sagas — bring your imagination to life.
-          </p>
-          <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-            <a href={workbenchLink} class="btn-primary px-8 py-4 rounded-xl text-lg flex items-center gap-2 group w-full sm:w-auto justify-center">
-              {isAuthenticated ? 'Go to Dashboard' : 'Start Writing for Free'}
-              <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+    <div class="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+      <!-- Left: Text Content -->
+      <div class="flex-1 text-center lg:text-left pt-12 lg:pt-0">
+        <h1 class="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight mb-6">
+          Craft Worlds with Words.<br/>
+          <span class="text-gradient">Your AI Co-pilot for Epic Fanfiction.</span>
+        </h1>
+        <p class="text-lg md:text-xl text-[#A09CB8] mb-10 max-w-2xl mx-auto lg:mx-0 font-medium">
+          From character creation to multi-chapter sagas — bring your imagination to life.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+          <a href={workbenchLink} class="btn-primary px-8 py-4 rounded-xl text-lg flex items-center gap-2 group w-full sm:w-auto justify-center">
+            {isAuthenticated ? 'Go to Dashboard' : 'Start Writing for Free'}
+            <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+          </a>
+          {!isAuthenticated && (
+            <a href="/signup" class="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors flex items-center gap-2">
+              Create Account
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
             </a>
-            {!isAuthenticated && (
-              <a href="/signup" class="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors flex items-center gap-2">
-                Create Account
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </a>
-            )}
-          </div>
-        </div>
-
-        <!-- Right: Floating Quill Illustration -->
-        <div class="flex-1 flex justify-center lg:justify-end relative h-[400px] w-full max-w-[500px]">
-          <div class="relative w-full h-full flex items-center justify-center">
-            <!-- Magic Quill -->
-            <div class="floating-quill relative z-10">
-              <i data-lucide="feather" class="w-48 h-48 text-white opacity-90" style="color: #EAE6F8;"></i>
-            </div>
-            <!-- Sparkle Effects -->
-            <div class="absolute bottom-1/4 left-1/3 magic-sparkle" style="animation-delay: 0s;">
-              <i data-lucide="sparkle" class="w-6 h-6 text-[#8A2BE2]"></i>
-            </div>
-            <div class="absolute bottom-1/3 left-1/4 magic-sparkle" style="animation-delay: 0.5s;">
-              <i data-lucide="sparkle" class="w-4 h-4 text-[#EAE6F8]"></i>
-            </div>
-            <div class="absolute bottom-20 left-1/2 magic-sparkle" style="animation-delay: 1s;">
-              <i data-lucide="sparkle" class="w-8 h-8 text-[#4A00E0]"></i>
-            </div>
-            <!-- Soft Violet Glow -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#8A2BE2] rounded-full mix-blend-screen filter blur-[80px] opacity-40"></div>
-          </div>
+          )}
         </div>
       </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="py-24 relative z-10 bg-[#12101D]/50">
-      <div class="max-w-7xl mx-auto px-6">
-        <h2 class="text-3xl md:text-4xl font-bold text-center mb-16">Everything a Storyteller Needs.</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <!-- Feature 1 -->
-          <div class="glass-card p-8 group">
-            <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
-              <i data-lucide="book-open" class="w-7 h-7 text-white"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">Consistent Characters & Lore</h3>
-            <p class="text-[#A09CB8] font-medium leading-relaxed">
-              Build a rich story bible. The AI always remembers your characters, settings, and plot rules, keeping your narrative perfectly coherent.
-            </p>
+      <!-- Right: Floating Quill Illustration -->
+      <div class="flex-1 flex justify-center lg:justify-end relative h-[400px] w-full max-w-[500px]">
+        <div class="relative w-full h-full flex items-center justify-center">
+          <!-- Magic Quill -->
+          <div class="floating-quill relative z-10">
+            <i data-lucide="feather" class="w-48 h-48 text-white opacity-90" style="color: #EAE6F8;"></i>
           </div>
-
-          <!-- Feature 2 -->
-          <div class="glass-card p-8 group">
-            <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
-              <i data-lucide="wand-2" class="w-7 h-7 text-white"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">AI-Powered Co-writing</h3>
-            <p class="text-[#A09CB8] font-medium leading-relaxed">
-              Stream your story in real-time. Guide the AI with scene directions, tone sliders, and style controls, then watch your vision come alive.
-            </p>
+          <!-- Sparkle Effects -->
+          <div class="absolute bottom-1/4 left-1/3 magic-sparkle" style="animation-delay: 0s;">
+            <i data-lucide="sparkle" class="w-6 h-6 text-[#8A2BE2]"></i>
           </div>
-
-          <!-- Feature 3 -->
-          <div class="glass-card p-8 group">
-            <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
-              <i data-lucide="library" class="w-7 h-7 text-white"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">Multi-Chapter Management</h3>
-            <p class="text-[#A09CB8] font-medium leading-relaxed">
-              Organize your epic. Create, reorder, and manage unlimited chapters within a clean, distraction-free workspace.
-            </p>
+          <div class="absolute bottom-1/3 left-1/4 magic-sparkle" style="animation-delay: 0.5s;">
+            <i data-lucide="sparkle" class="w-4 h-4 text-[#EAE6F8]"></i>
           </div>
+          <div class="absolute bottom-20 left-1/2 magic-sparkle" style="animation-delay: 1s;">
+            <i data-lucide="sparkle" class="w-8 h-8 text-[#4A00E0]"></i>
+          </div>
+          <!-- Soft Violet Glow -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#8A2BE2] rounded-full mix-blend-screen filter blur-[80px] opacity-40"></div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Social Proof Section -->
-    <section class="py-24 relative z-10 overflow-hidden">
-      <div class="max-w-7xl mx-auto px-6 mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold text-center">Loved by Guild Creators</h2>
-      </div>
+  <!-- Features Section -->
+  <section class="py-24 relative z-10 bg-[#12101D]/50">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-16">Everything a Storyteller Needs.</h2>
 
-      <!-- Horizontal Scroll Carousel -->
-      <div class="flex overflow-x-auto hide-scrollbar pb-10 px-6 snap-x snap-mandatory gap-6" style="scroll-padding-left: max(24px, calc((100vw - 1280px) / 2)); padding-left: max(24px, calc((100vw - 1280px) / 2));">
-
-        <!-- Card 1 -->
-        <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
-          <p class="text-[#EAE6F8] italic mb-6">"The lorebook feature completely changed how I track my original characters. It's like having a co-writer who never sleeps and knows the canon perfectly."</p>
-          <div class="flex items-center justify-between">
-            <span class="text-[#A09CB8] font-medium">@ficweaver</span>
-            <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Harry Potter</span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
+            <i data-lucide="book-open" class="w-7 h-7 text-white"></i>
           </div>
+          <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">Consistent Characters & Lore</h3>
+          <p class="text-[#A09CB8] font-medium leading-relaxed">
+            Build a rich story bible. The AI always remembers your characters, settings, and plot rules, keeping your narrative perfectly coherent.
+          </p>
         </div>
 
-        <!-- Card 2 -->
-        <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
-          <p class="text-[#EAE6F8] italic mb-6">"I finished a 50k word fic in a week. The UI is just so distraction-free, and the AI perfectly adapts to my gritty writing style."</p>
-          <div class="flex items-center justify-between">
-            <span class="text-[#A09CB8] font-medium">@shinobi_scribe</span>
-            <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Naruto</span>
+        <!-- Feature 2 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
+            <i data-lucide="wand-2" class="w-7 h-7 text-white"></i>
           </div>
+          <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">AI-Powered Co-writing</h3>
+          <p class="text-[#A09CB8] font-medium leading-relaxed">
+            Stream your story in real-time. Guide the AI with scene directions, tone sliders, and style controls, then watch your vision come alive.
+          </p>
         </div>
 
-        <!-- Card 3 -->
-        <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
-          <p class="text-[#EAE6F8] italic mb-6">"Managing a 40-chapter saga used to be a nightmare of messy docs. This app keeps everything organized. The scene direction tool is pure magic."</p>
-          <div class="flex items-center justify-between">
-            <span class="text-[#A09CB8] font-medium">@stark_intern</span>
-            <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Marvel</span>
+        <!-- Feature 3 -->
+        <div class="glass-card p-8 group">
+          <div class="w-14 h-14 rounded-xl bg-accent-gradient flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(138,43,226,0.4)]">
+            <i data-lucide="library" class="w-7 h-7 text-white"></i>
           </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
-          <p class="text-[#EAE6F8] italic mb-6">"I've never felt this inspired. When I get writer's block, I just tweak the 'Creativity' slider and the AI gives me the perfect prompt to keep going."</p>
-          <div class="flex items-center justify-between">
-            <span class="text-[#A09CB8] font-medium">@dragon_rider_99</span>
-            <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Game of Thrones</span>
-          </div>
-        </div>
-
-        <!-- Spacer for Right Margin -->
-        <div class="min-w-[24px] flex-shrink-0"></div>
-      </div>
-    </section>
-
-    <!-- Final CTA Section -->
-    <section class="py-32 relative z-10 w-full overflow-hidden">
-      <!-- Bottom Glow Background -->
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-[#8A2BE2] to-[#4A00E0] rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
-
-      <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-        <h2 class="text-4xl md:text-5xl font-extrabold mb-10">Ready to Write Your Next Masterpiece?</h2>
-        <div class="flex flex-col items-center">
-          <a href="/dashboard" class="btn-primary px-10 py-5 rounded-xl text-xl mb-4 w-full sm:w-auto inline-block">
-            Join the Guild of Creators — It's Free
-          </a>
-          <p class="text-[#A09CB8] text-sm font-medium">No credit card required.</p>
+          <h3 class="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#8A2BE2] group-hover:to-[#4A00E0] transition-colors">Multi-Chapter Management</h3>
+          <p class="text-[#A09CB8] font-medium leading-relaxed">
+            Organize your epic. Create, reorder, and manage unlimited chapters within a clean, distraction-free workspace.
+          </p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="border-t border-[#3A3651] bg-[#12101D]/80 relative z-10">
-      <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-        <!-- Left: Logo -->
-        <div class="flex items-center gap-2">
-          <i data-lucide="feather" class="w-5 h-5 text-[#A09CB8]"></i>
-          <span class="font-bold text-[#A09CB8]">AI Fanfiction</span>
-        </div>
+  <!-- Social Proof Section -->
+  <section class="py-24 relative z-10 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 mb-12">
+      <h2 class="text-3xl md:text-4xl font-bold text-center">Loved by Guild Creators</h2>
+    </div>
 
-        <!-- Center: Links -->
-        <div class="flex flex-wrap justify-center gap-6 text-sm font-medium text-[#A09CB8]">
-          <a href="/pricing" class="hover:text-[#EAE6F8] transition-colors">Pricing</a>
-          <a href="#" class="hover:text-[#EAE6F8] transition-colors">Blog</a>
-          <a href="#" class="hover:text-[#EAE6F8] transition-colors">Terms of Service</a>
-          <a href="#" class="hover:text-[#EAE6F8] transition-colors">Privacy Policy</a>
-        </div>
+    <!-- Horizontal Scroll Carousel -->
+    <div class="flex overflow-x-auto hide-scrollbar pb-10 px-6 snap-x snap-mandatory gap-6" style="scroll-padding-left: max(24px, calc((100vw - 1280px) / 2)); padding-left: max(24px, calc((100vw - 1280px) / 2));">
 
-        <!-- Right: Social -->
-        <div class="flex items-center gap-4">
-          <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="Twitter">
-            <i data-lucide="twitter" class="w-5 h-5"></i>
-          </a>
-          <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="Discord">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>
-          </a>
-          <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="GitHub">
-            <i data-lucide="github" class="w-5 h-5"></i>
-          </a>
+      <!-- Card 1 -->
+      <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
+        <p class="text-[#EAE6F8] italic mb-6">"The lorebook feature completely changed how I track my original characters. It's like having a co-writer who never sleeps and knows the canon perfectly."</p>
+        <div class="flex items-center justify-between">
+          <span class="text-[#A09CB8] font-medium">@ficweaver</span>
+          <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Harry Potter</span>
         </div>
       </div>
-    </footer>
 
-    <!-- Initialize Lucide Icons -->
-    <script is:inline>
-      // @ts-ignore
-      lucide.createIcons();
-    </script>
-  </body>
-</html>
+      <!-- Card 2 -->
+      <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
+        <p class="text-[#EAE6F8] italic mb-6">"I finished a 50k word fic in a week. The UI is just so distraction-free, and the AI perfectly adapts to my gritty writing style."</p>
+        <div class="flex items-center justify-between">
+          <span class="text-[#A09CB8] font-medium">@shinobi_scribe</span>
+          <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Naruto</span>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
+        <p class="text-[#EAE6F8] italic mb-6">"Managing a 40-chapter saga used to be a nightmare of messy docs. This app keeps everything organized. The scene direction tool is pure magic."</p>
+        <div class="flex items-center justify-between">
+          <span class="text-[#A09CB8] font-medium">@stark_intern</span>
+          <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Marvel</span>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="glass-card p-6 min-w-[320px] max-w-[400px] flex-shrink-0 snap-center flex flex-col justify-between">
+        <p class="text-[#EAE6F8] italic mb-6">"I've never felt this inspired. When I get writer's block, I just tweak the 'Creativity' slider and the AI gives me the perfect prompt to keep going."</p>
+        <div class="flex items-center justify-between">
+          <span class="text-[#A09CB8] font-medium">@dragon_rider_99</span>
+          <span class="px-3 py-1 rounded-full text-xs font-bold" style="background: rgba(138, 43, 226, 0.2); color: #c4a1ff;">Game of Thrones</span>
+        </div>
+      </div>
+
+      <!-- Spacer for Right Margin -->
+      <div class="min-w-[24px] flex-shrink-0"></div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  <section class="py-32 relative z-10 w-full overflow-hidden">
+    <!-- Bottom Glow Background -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-[#8A2BE2] to-[#4A00E0] rounded-full mix-blend-screen filter blur-[150px] opacity-20 pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+      <h2 class="text-4xl md:text-5xl font-extrabold mb-10">Ready to Write Your Next Masterpiece?</h2>
+      <div class="flex flex-col items-center">
+        <a href="/dashboard" class="btn-primary px-10 py-5 rounded-xl text-xl mb-4 w-full sm:w-auto inline-block">
+          Join the Guild of Creators — It's Free
+        </a>
+        <p class="text-[#A09CB8] text-sm font-medium">No credit card required.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-[#3A3651] bg-[#12101D]/80 relative z-10">
+    <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+      <!-- Left: Logo -->
+      <div class="flex items-center gap-2">
+        <i data-lucide="feather" class="w-5 h-5 text-[#A09CB8]"></i>
+        <span class="font-bold text-[#A09CB8]">AI Fanfiction</span>
+      </div>
+
+      <!-- Center: Links -->
+      <div class="flex flex-wrap justify-center gap-6 text-sm font-medium text-[#A09CB8]">
+        <a href="/pricing" class="hover:text-[#EAE6F8] transition-colors">Pricing</a>
+        <a href="#" class="hover:text-[#EAE6F8] transition-colors">Blog</a>
+        <a href="#" class="hover:text-[#EAE6F8] transition-colors">Terms of Service</a>
+        <a href="#" class="hover:text-[#EAE6F8] transition-colors">Privacy Policy</a>
+      </div>
+
+      <!-- Right: Social -->
+      <div class="flex items-center gap-4">
+        <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="Twitter">
+          <i data-lucide="twitter" class="w-5 h-5"></i>
+        </a>
+        <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="Discord">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/></svg>
+        </a>
+        <a href="#" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors" aria-label="GitHub">
+          <i data-lucide="github" class="w-5 h-5"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+</BaseLayout>
+
+<style>
+  /* Glassmorphism Card */
+  .glass-card {
+    background: rgba(28, 25, 41, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid #3A3651;
+    border-radius: 12px;
+    transition: all 0.2s ease-out;
+  }
+  .glass-card:hover {
+    border-color: #8A2BE2;
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.15);
+    transform: translateY(-4px);
+  }
+
+  /* Icon Hover Transition */
+  .icon-transition {
+    color: #A09CB8;
+    transition: all 0.2s ease-out;
+  }
+  a:hover .icon-transition, .glass-card:hover .icon-transition {
+    color: #EAE6F8;
+  }
+
+  /* Hide Scrollbar */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Floating Quill Animation */
+  .floating-quill {
+    animation: float 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.6));
+  }
+  @keyframes float {
+    0% { transform: translateY(0px) rotate(-10deg); }
+    50% { transform: translateY(-15px) rotate(-5deg); }
+    100% { transform: translateY(0px) rotate(-10deg); }
+  }
+  .magic-sparkle {
+    animation: pulse-glow 2s infinite alternate;
+  }
+  @keyframes pulse-glow {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+  }
+</style>

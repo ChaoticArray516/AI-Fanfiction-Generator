@@ -82,10 +82,14 @@ export const auth = betterAuth({
   hooks: {
     after: [
       {
-        matcher: (context) => context.path === '/sign-up/email',
+        matcher: (context) => {
+          // Better-auth context structure check
+          const path = context.path || context.request?.url || '';
+          return path === '/sign-up/email';
+        },
         handler: async (ctx) => {
           // When email registration succeeds, create default user profile
-          const userId = ctx.context.newSession?.user?.id;
+          const userId = ctx.context?.newSession?.user?.id;
           if (userId) {
             try {
               // Check if profile already exists (for idempotency)

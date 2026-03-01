@@ -1,5 +1,7 @@
 import { useCompletion } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
+import { guestDataManager } from '../lib/guestDataManager';
+import { isAuthenticated } from '../lib/dataService';
 
 interface LoreEntry {
   type: string;
@@ -19,6 +21,7 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
   const [style, setStyle] = useState('Cinematic');
   const [creativity, setCreativity] = useState(0.7);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   // 构建上下文
@@ -85,6 +88,20 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Check authentication and credits for guest users
+    const authenticated = isAuthenticated() || false; // Ensure boolean value
+
+    if (!authenticated) {
+      // Guest mode: check if user has credits
+      if (!guestDataManager.hasCredits()) {
+        // No credits left - show signup modal
+        setShowSignupModal(true);
+        return;
+      }
+      // Use one credit before generating
+      guestDataManager.useCredit();
+    }
+
     // 获取当前编辑器中的文本
     const currentText = editorRef.current?.innerText || '';
 
@@ -104,6 +121,7 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
         context,
         style,
         creativity,
+        isGuest: !authenticated, // Add flag to indicate guest user
       }),
     });
   };
@@ -273,6 +291,77 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
               </a>
               <button
                 onClick={() => setShowUpgradeModal(false)}
+                className="text-sm text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signup Modal - for guest users who ran out of credits */}
+      {showSignupModal && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowSignupModal(false)}
+        >
+          <div
+            className="glass-panel p-8 rounded-xl max-w-md w-full text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-[#EAE6F8] mb-3">
+              Create an Account
+            </h2>
+
+            {/* Message */}
+            <p className="text-[#A09CB8] mb-6 leading-relaxed">
+              You've used all your free AI generations. Sign up now to save your work and get 10,000 free credits every month!
+            </p>
+
+            {/* Benefits */}
+            <div className="text-left mb-8 space-y-3">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">10,000 free credits every month</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">Your stories are saved in the cloud</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-[#5AE08A] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-[#EAE6F8]">Access to all features</span>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3">
+              <a
+                href="/signup"
+                className="btn-primary w-full px-6 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2"
+              >
+                Sign Up Free
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+              <button
+                onClick={() => setShowSignupModal(false)}
                 className="text-sm text-[#A09CB8] hover:text-[#EAE6F8] transition-colors"
               >
                 Maybe Later

@@ -12,8 +12,9 @@ AI 同人小说生成器是一个功能完善的 Web 应用，为同人小说创
 - **角色与世界观管理** - 知识库 (Lorebook) 功能，确保长篇故事的一致性
 - **多章节故事管理** - 组织和管理多章节、多条故事线
 - **专注沉浸的写作体验** - Ethereal Dark Mode 设计，最小化干扰
-- **本地 + 云端存储** - 游客模式使用 IndexedDB，登录用户使用 PostgreSQL
+- **本地 + 云端存储** - 游客模式使用 localStorage，登录用户使用 PostgreSQL
 - **完整用户系统** - 基于 better-auth 的认证系统
+- **积分制消费** - 游客 10 积分体验，登录用户每月 10,000 积分
 
 ## 技术栈
 
@@ -43,13 +44,14 @@ ai-fanfiction-v2/
 │   │   ├── AIGenerator.tsx     # AI 生成器 (含积分控制与升级弹窗)
 │   │   ├── StoryCard.tsx       # 故事卡片
 │   │   ├── SigninForm.tsx      # 登录表单
-│   │   └── SignupForm.tsx      # 注册表单
+│   │   ├── SignupForm.tsx      # 注册表单
+│   │   └── GlobalNav.astro     # 全局导航栏
 │   ├── contexts/               # React 上下文
 │   │   └── SessionContext.tsx  # 会话状态管理
 │   ├── db/                     # 数据库配置
 │   │   ├── schema.ts           # Drizzle 数据模型
 │   │   ├── index.ts            # 数据库连接
-│   │   └── queries.ts          # 查询封装 (含积分更新语法修复)
+│   │   └── queries.ts          # 查询封装
 │   ├── layouts/                # Astro 布局
 │   │   └── BaseLayout.astro    # 基础布局
 │   ├── lib/                    # 工具库
@@ -59,37 +61,42 @@ ai-fanfiction-v2/
 │   │   ├── stores.ts          # Nanostores 状态
 │   │   └── guestDataManager.ts # 游客数据管理 (localStorage)
 │   ├── pages/                  # 页面路由
-│   │   ├── index.astro        # 首页
+│   │   ├── index.astro        # 首页 (营销页)
 │   │   ├── signin.astro       # 登录页
 │   │   ├── signup.astro       # 注册页
-│   │   ├── auth.astro         # 认证页 (备用)
+│   │   ├── auth.astro         # 认证页
 │   │   ├── guest.astro        # 游客入口页 (客户端执行)
 │   │   ├── dashboard.astro    # 用户仪表盘
 │   │   ├── workbench/
-│   │   │   └── [...all].astro # 工作台通配路由 (含游客认证检测)
-│   │   ├── lorebook.astro     # 知识库管理 (动态 CRUD 已激活)
-│   │   ├── settings.astro     # 设置页面 (含用户信息加载与登出)
+│   │   │   └── [...all].astro # 工作台通配路由
+│   │   ├── lorebook.astro     # 知识库管理
+│   │   ├── settings.astro     # 设置页面
 │   │   ├── features.astro     # 功能特性页
 │   │   ├── pricing.astro      # 定价页
 │   │   └── community.astro    # 社区页
+│   ├── middleware.ts          # 路由中间件 (认证守卫)
+│   ├── auth.ts               # 服务端认证配置
+│   ├── auth-client.ts        # 客户端认证配置
+│   └── types.d.ts            # TypeScript 类型定义
 │   └── api/                   # API 路由
-│       ├── generate.ts        # AI 生成 (含认证与积分控制)
+│       ├── generate.ts        # AI 生成
 │       ├── auth/[...all].ts   # 认证 API
 │       ├── user/
-│       │   └── subscription.ts # 用户订阅信息
+│       │   ├── subscription.ts # 用户订阅信息
+│       │   └── profile.ts      # 用户资料
 │       ├── migrate/           # 数据迁移
 │       │   └── index.ts       # 游客数据迁移
 │       ├── stories/           # 故事 CRUD
 │       ├── chapters/          # 章节 CRUD
 │       └── lore/              # 知识库 CRUD
-│           ├── [storyId]/index.ts  # 知识库列表
-│           └── [id].ts        # 单个条目操作 (含 PUT 更新)
 ├── docs/
 │   └── GUEST_MODE.md          # 游客模式文档
 ├── migrations/
 │   └── 001_create_tables.sql  # 数据库迁移
 ├── package.json
 ├── astro.config.mjs
+├── tailwind.config.cjs
+├── tsconfig.json
 └── README.md
 ```
 
@@ -112,16 +119,16 @@ npm install
 创建 `.env` 文件：
 
 ```env
-# 数据库配置
-DATABASE_URL=postgresql://user:password@localhost:5432/ai_fanfiction
-
 # DeepSeek API 配置
 DEEPSEEK_API_KEY=your_api_key_here
-DEEPSEEK_API_BASE=https://api.deepseek.com
+DEEPSEEK_BASE_URL=https://api.deepseek.com
 
 # Better Auth 配置
 BETTER_AUTH_SECRET=your_secret_key_here
 BETTER_AUTH_URL=http://localhost:4321
+
+# 数据库配置 (可选，本地开发可不配置)
+# DATABASE_URL=postgresql://user:password@localhost:5432/ai_fanfiction
 
 # 应用配置
 PUBLIC_APP_URL=http://localhost:4321
@@ -154,27 +161,33 @@ npm run preview
 - 产品特性展示
 - 动态 CTA (根据登录状态)
 - Glassmorphism 设计
+- 导航至功能、定价、社区页面
 
-### 2. 用户认证 (`/signin`, `/signup`)
+### 2. 功能特性页 (`/features`)
+展示六大核心功能：
+- **AI Co-Writer** - 智能写作助手
+- **Lorebook Manager** - 角色与世界观管理
+- **Distraction-Free Editor** - 专注写作模式
+- **Cloud Sync** - 云端同步
+- **Guest Mode** - 游客体验模式
+- **Multi-Chapter** - 多章节管理
+
+### 3. 定价页 (`/pricing`)
+三种订阅方案：
+- **Free** - $0/月，10,000 积分/月，最多 3 个故事
+- **Pro** - $9/月，100,000 积分/月，无限故事 (推荐)
+- **Premium** - $29/月，无限积分，专属支持
+
+### 4. 社区页 (`/community`)
+- Discord 社区入口
+- GitHub 开源贡献
+- 社区权益说明
+
+### 5. 用户认证 (`/signin`, `/signup`)
 - 基于 better-auth 的完整认证系统
 - 玻璃态卡片设计
 - 表单验证与交互反馈
 - 社交登录支持 (可扩展)
-
-### 3. 功能特性页 (`/features`)
-- 产品功能详细展示
-- 图文并茂的介绍
-- 响应式布局
-
-### 4. 定价页 (`/pricing`)
-- 价格方案展示
-- 功能对比
-- 订阅按钮
-
-### 5. 社区页 (`/community`)
-- 社区介绍
-- 用户作品展示
-- 讨论区入口
 
 ### 6. 用户仪表盘 (`/dashboard`)
 - 故事项目网格展示
@@ -196,7 +209,6 @@ npm run preview
 - 自动保存
 
 ### 8. 知识库管理 (`/lorebook`)
-- **已激活动态 CRUD 功能**
 - 角色与世界观管理
 - 分类条目（角色/地点/物品）自动分组显示
 - 属性键值对编辑
@@ -207,62 +219,107 @@ npm run preview
 - 折叠/展开分类
 
 ### 9. 设置页面 (`/settings`)
-- **已激活用户功能**
-- 订阅与账单信息显示（动态加载）
+- 订阅与账单信息显示
 - 积分余额与重置日期
 - 积分使用进度条
 - 登出功能
 - 个人资料管理
 - 账户安全设置
-- AI 偏好设置
-- 外观主题切换
 - 标签式导航
 
 ### 10. 游客模式 (`/guest`)
-- **已修复并完全可用**
 - 客户端 localStorage 数据存储
-- 自动生成游客故事 ID (`guest_story_{timestamp}_{random}`)
+- 自动生成游客故事 ID
 - 无需注册即可体验完整功能
 - 登录后可迁移数据到云端
-- 与认证用户相同的工作台体验
+- 初始 10 积分用于体验
 
-### 11. API 路由
+## API 路由
 
 | 路由 | 方法 | 描述 | 状态 |
 |:---|:---|:---|:---|
-| `/api/generate` | POST | AI 文本生成 (含认证与积分控制) | ✅ 完成 |
-| `/api/auth/[...all]` | * | better-auth 处理器 | ✅ 完成 |
-| `/api/user/subscription` | GET | 用户订阅与积分信息 | ✅ 完成 |
-| `/api/stories` | GET/POST | 故事列表/创建 | ✅ 完成 |
-| `/api/stories/[id]` | GET/PUT/DELETE | 单个故事操作 | ✅ 完成 |
-| `/api/stories/[storyId]/chapters` | GET/POST | 章节列表/创建 | ✅ 完成 |
-| `/api/chapters/[id]` | GET/PUT/DELETE | 单个章节操作 | ✅ 完成 |
-| `/api/stories/[storyId]/lore` | GET/POST | 知识库列表/创建 | ✅ 完成 |
-| `/api/lore/[id]` | GET/PUT/DELETE | 知识库条目操作 (含 PUT) | ✅ 完成 |
-| `/api/migrate` | POST | 游客数据迁移 | ✅ 完成 |
+| `/api/generate` | POST | AI 文本生成 | ✅ |
+| `/api/auth/[...all]` | * | better-auth 处理器 | ✅ |
+| `/api/user/subscription` | GET | 用户订阅与积分信息 | ✅ |
+| `/api/user/profile` | GET | 用户资料 | ✅ |
+| `/api/stories` | GET/POST | 故事列表/创建 | ✅ |
+| `/api/stories/[id]` | GET/PUT/DELETE | 单个故事操作 | ✅ |
+| `/api/stories/[storyId]/chapters` | GET/POST | 章节列表/创建 | ✅ |
+| `/api/chapters/[id]` | GET/PUT/DELETE | 单个章节操作 | ✅ |
+| `/api/stories/[storyId]/lore` | GET/POST | 知识库列表/创建 | ✅ |
+| `/api/lore/[id]` | GET/PUT/DELETE | 知识库条目操作 | ✅ |
+| `/api/migrate` | POST | 游客数据迁移 | ✅ |
+
+## 数据库模型
+
+### Stories (故事表)
+```typescript
+{
+  id: string (主键)
+  userId: string (用户ID)
+  title: string (标题)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+### Chapters (章节表)
+```typescript
+{
+  id: string (主键)
+  storyId: string (外键 -> stories)
+  title: string (标题)
+  content: text (内容)
+  order: number (排序)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+### Lore Entries (知识库条目表)
+```typescript
+{
+  id: string (主键)
+  storyId: string (外键 -> stories)
+  name: string (名称)
+  type: string (类型: character/location/item)
+  description: text (描述)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
+
+### User Profiles (用户资料表)
+```typescript
+{
+  id: string (主键，同 user.id)
+  subscription: string (订阅类型: free/pro/premium)
+  credits: integer (积分余额)
+  creditsResetAt: timestamp (积分重置时间)
+  createdAt: timestamp
+  updatedAt: timestamp
+}
+```
 
 ## 数据存储策略
 
 ### 游客模式 (未登录)
 - 使用 **localStorage** 存储数据（浏览器端）
 - 通过 `guestDataManager.ts` 管理
-- 游客故事 ID 格式：`guest_story_{timestamp}_{random}`
+- 游客故事 ID 格式：`guest_story_{timestamp}`
+- 初始 10 积分用于体验
 - 登录后可迁移到云端
-- 无需注册即可体验完整功能
 
 ### 认证用户
 - 使用 **PostgreSQL** 存储数据
 - 通过 Drizzle ORM 操作
 - 支持跨设备同步
-- AI 生成消耗积分系统（每次 100 积分）
-- 积分不足时显示升级弹窗
+- 每月 10,000 积分（Free 用户）
 
 ### 游客入口流程
 
-游客用户可以通过以下路径进入应用：
-
 1. **访问 `/guest` 页面**
-   - 自动生成游客故事 ID（格式：`guest_story_{timestamp}_{random}`）
+   - 自动生成游客故事 ID
    - 数据存储在浏览器 localStorage 中
    - 自动重定向到 `/workbench/{guest_story_id}`
 
@@ -276,50 +333,26 @@ npm run preview
    - 调用 `/api/migrate` 端点完成迁移
    - 迁移后数据存储在 PostgreSQL 中
 
-## 开发状态与完成记录
+## 积分系统
 
-### 已完成的核心功能 (✅ 全部完成)
+### 游客用户
+- 初始积分：10
+- 每次生成消耗：1 积分
+- 不支持充值
 
-| 步骤 | 功能描述 | 状态 | 完成时间 |
-|:---|:---|:---|:---|
-| **步骤一** | AI 生成 API 认证控制 | ✅ 完成 | 上一会话 |
-| **步骤二** | AI 生成器积分控制与升级弹窗 | ✅ 完成 | 上一会话 |
-| **步骤三** | 数据库查询语法修复 & Lore PUT 端点 | ✅ 完成 | 上一会话 |
-| **步骤四** | 知识库页面动态 CRUD 激活 | ✅ 完成 | 已完成 |
-| **步骤五** | 设置页面用户功能激活 | ✅ 完成 | 已完成 |
+### Free 订阅
+- 每月积分：10,000
+- 每次生成消耗：1 积分
+- 最多创建 3 个故事
 
-### 关键 Bug 修复 (✅ 全部修复)
+### Pro 订阅 ($9/月)
+- 每月积分：100,000
+- 无限故事数量
 
-| Bug | 描述 | 修复方案 | 状态 |
-|:---|:---|:---|:---|
-| **游客入口报错** | `guestDataManager is not defined` | 将 guest.astro 转换为纯客户端执行 | ✅ 已修复 |
-| **游客入口死循环** | `/guest → /workbench → /signin` 循环 | workbench 认证守卫增加游客故事检测 | ✅ 已修复 |
-
-### 最近更新详情
-
-#### 步骤四：知识库页面激活 (已完成)
-- ✅ 为交互元素添加 ID 属性
-- ✅ 实现客户端数据获取 (`/api/lore?storyId={id}`)
-- ✅ 动态渲染侧边栏条目（按类型分组）
-- ✅ 实现 CRUD 操作（创建、读取、更新、删除）
-- ✅ 类型感知的图标和颜色（角色/地点/物品）
-- ✅ 保存状态指示器
-
-#### 步骤五：设置页面激活 (已完成)
-- ✅ 添加登出按钮
-- ✅ 实现用户数据加载 (`/api/user/subscription`)
-- ✅ 显示订阅类型与积分余额
-- ✅ 计算并显示积分重置日期
-- ✅ 积分使用进度条
-- ✅ 登出功能 (`/api/auth/sign-out`)
-
-#### 游客模式修复 (已完成)
-- ✅ 修复 `guestDataManager is not defined` 错误
-- ✅ 将 guest.astro 改为纯客户端 JavaScript 执行
-- ✅ localStorage 直接访问，避免服务端依赖
-- ✅ 修复游客入口死循环问题
-- ✅ workbench 认证守卫增加 `isGuestStory` 检测
-- ✅ 游客故事 ID 格式：`guest_story_{timestamp}_{random}`
+### Premium 订阅 ($29/月)
+- 无限积分
+- 无限故事数量
+- 专属支持
 
 ## 设计系统
 
@@ -387,8 +420,10 @@ vercel deploy
 **环境变量配置**：
 - `DATABASE_URL`: PostgreSQL 连接字符串 (建议使用 Vercel Postgres)
 - `DEEPSEEK_API_KEY`: DeepSeek API 密钥
+- `DEEPSEEK_BASE_URL`: `https://api.deepseek.com`
 - `BETTER_AUTH_SECRET`: 认证密钥
 - `BETTER_AUTH_URL`: 部署后的完整 URL
+- `PUBLIC_APP_URL`: 部署后的完整 URL
 
 **vercel.json** 配置示例：
 ```json
@@ -464,6 +499,26 @@ volumes:
   postgres_data:
 ```
 
+## 开发状态
+
+### 已完成的核心功能 (✅ 全部完成)
+
+| 步骤 | 功能描述 | 状态 |
+|:---|:---|:---|
+| **步骤一** | AI 生成 API 认证控制 | ✅ 完成 |
+| **步骤二** | AI 生成器积分控制与升级弹窗 | ✅ 完成 |
+| **步骤三** | 数据库查询语法修复 & Lore PUT 端点 | ✅ 完成 |
+| **步骤四** | 知识库页面动态 CRUD 激活 | ✅ 完成 |
+| **步骤五** | 设置页面用户功能激活 | ✅ 完成 |
+| **步骤六** | 营销页面 (首页/功能/定价/社区) | ✅ 完成 |
+
+### 关键 Bug 修复 (✅ 全部修复)
+
+| Bug | 描述 | 修复方案 | 状态 |
+|:---|:---|:---|:---|
+| **游客入口报错** | `guestDataManager is not defined` | 将 guest.astro 转换为纯客户端执行 | ✅ 已修复 |
+| **游客入口死循环** | `/guest → /workbench → /signin` 循环 | workbench 认证守卫增加游客故事检测 | ✅ 已修复 |
+
 ## 后续开发计划
 
 ### 近期计划 (1-2 周)
@@ -484,7 +539,7 @@ volumes:
 - [ ] 故事模板库
 
 ### 长期计划 (3-6 月)
-- [ ] 积分/订阅制付费系统 (基础已完成)
+- [ ] 积分/订阅制付费系统完整实现
 - [ ] 移动端应用 (React Native)
 - [ ] 多语言支持 (i18n)
 - [ ] 插件系统
@@ -499,6 +554,7 @@ volumes:
 - [Tailwind CSS 文档](https://tailwindcss.com/docs)
 - [Drizzle ORM 文档](https://orm.drizzle.team)
 - [React 19 文档](https://react.dev)
+- [DeepSeek API 文档](https://platform.deepseek.com/docs)
 
 ## 贡献指南
 
@@ -516,4 +572,4 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**基于 Astro 5.17 + React 19 + Better Auth + Drizzle 构建**
+**基于 Astro 5.17 + React 19 + Better Auth + Drizzle + Tailwind CSS 4 构建**

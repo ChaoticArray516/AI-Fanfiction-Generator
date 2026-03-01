@@ -1,6 +1,27 @@
 ---
-const description = "AI-powered fanfiction writing assistant";
-const title = "AI Fanfiction Generator";
+/**
+ * Base Layout
+ *
+ * Provides a consistent layout structure for all pages.
+ * Includes:
+ * - Global styles and fonts
+ * - Tailwind CSS configuration
+ * - Lucide icons
+ * - Slots for navigation and page content
+ */
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'AI Fanfiction Generator',
+  description = 'AI-powered fanfiction writing assistant'
+} = Astro.props;
+
+// Get current path for navigation highlighting
+const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -8,7 +29,7 @@ const title = "AI Fanfiction Generator";
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
@@ -19,9 +40,190 @@ const title = "AI Fanfiction Generator";
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Configuration -->
+    <script is:inline define:vars={{ colors: { primary: { bg: '#12101D', text: '#EAE6F8' }, secondary: { bg: 'rgba(28, 25, 41, 0.75)', text: '#A09CB8' }, border: '#3A3651', danger: '#E05A5A', success: '#5AE08A' } } }>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                bg: '#12101D',
+                text: '#EAE6F8',
+              },
+              secondary: {
+                bg: 'rgba(28, 25, 41, 0.75)',
+                text: '#A09CB8',
+              },
+              border: '#3A3651',
+              danger: '#E05A5A',
+              success: '#5AE08A'
+            },
+            fontFamily: {
+              sans: ['Manrope', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+
+    <style is:global>
+      /* Global Styles */
+      body {
+        background-color: #12101D;
+        color: #EAE6F8;
+        font-family: 'Manrope', sans-serif;
+        line-height: 1.7;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Core Gradient & Text Effects */
+      .text-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .bg-accent-gradient {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+      }
+
+      /* Primary Button */
+      .btn-primary {
+        background: linear-gradient(135deg, #8A2BE2, #4A00E0);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 700;
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 0 20px rgba(138, 43, 226, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+      }
+
+      /* Secondary Button */
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid #3A3651;
+        transition: all 0.2s ease-out;
+        color: #EAE6F8;
+        font-weight: 500;
+      }
+      .btn-secondary:hover {
+        border-color: #8A2BE2;
+        color: #8A2BE2;
+      }
+
+      /* Glass Panel Effect */
+      .glass-panel {
+        background: rgba(28, 25, 41, 0.75);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Input Field */
+      .input-field {
+        background: rgba(28, 25, 41, 0.5);
+        border: 1px solid #3A3651;
+        color: #EAE6F8;
+        transition: all 0.2s ease-out;
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #8A2BE2;
+        box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.1);
+      }
+      .input-field::placeholder {
+        color: #3A3651;
+      }
+
+      /* Nebula Animation */
+      .nebula-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        overflow: hidden;
+        z-index: -1;
+        background: #12101D;
+      }
+      .nebula-blob {
+        position: absolute;
+        filter: blur(90px);
+        opacity: 0.5;
+        animation: swirl 20s infinite linear alternate;
+      }
+      .blob-1 {
+        width: 600px; height: 600px;
+        background: #2a0845;
+        top: -200px; left: -100px;
+      }
+      .blob-2 {
+        width: 500px; height: 500px;
+        background: #0f1c4d;
+        bottom: -100px; right: -50px;
+        animation-delay: -5s;
+      }
+
+      @keyframes swirl {
+        0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        100% { transform: translate(100px, 50px) rotate(10deg) scale(1.1); }
+      }
+
+      /* Particle Stars Animation */
+      .stars {
+        position: absolute;
+        width: 100%; height: 100%;
+        background-image: radial-gradient(2px 2px at 20px 30px, #EAE6F8, rgba(0,0,0,0)), radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), rgba(0,0,0,0)), radial-gradient(2px 2px at 50px 160px, rgba(255,255,255,0.5), rgba(0,0,0,0)), radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.5), rgba(0,0,0,0));
+        background-repeat: repeat;
+        background-size: 200px 200px;
+        animation: drift 100s linear infinite;
+        opacity: 0.3;
+      }
+      @keyframes drift {
+        from { transform: translateY(0); }
+        to { transform: translateY(-1000px); }
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #12101D;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3A3651;
+        border-radius: 5px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #4A4159;
+      }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script is:inline src="https://unpkg.com/lucide@latest"></script>
   </head>
-  <body class="bg-[#12101D]">
-    <slot />
+  <body class="antialiased">
+    <!-- Global Navigation Slot -->
+    <slot name="navbar" />
+
+    <!-- Main Content Slot -->
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <!-- Initialize Icons -->
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      });
+    </script>
   </body>
 </html>

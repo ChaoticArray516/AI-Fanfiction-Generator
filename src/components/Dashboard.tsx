@@ -16,11 +16,31 @@ export function Dashboard() {
   const error = useStore(errorStore);
   const [showNewStoryModal, setShowNewStoryModal] = useState(false);
   const [newStoryTitle, setNewStoryTitle] = useState('');
+  const [userName, setUserName] = useState<string | null>(null);
 
-  // Load stories on mount
+  // Load stories and user data on mount
   useEffect(() => {
     loadStories();
+    fetchUserName();
   }, []);
+
+  // Fetch user name
+  const fetchUserName = async () => {
+    try {
+      const response = await fetch('/api/user/subscription');
+      if (response.ok) {
+        const data = await response.json();
+        // Get user name from localStorage (set by auth)
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          setUserName(user.name || user.email?.split('@')[0] || 'User');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user name:', error);
+    }
+  };
 
   // Handle creating a new story
   const handleAddStory = async () => {
@@ -54,14 +74,31 @@ export function Dashboard() {
     <div className="min-h-screen bg-[#12101D]">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Stories</h1>
+        <div>
+          <h1 className="text-2xl font-bold">My Stories</h1>
+          {userName && (
+            <p className="text-sm text-[#A09CB8] mt-0.5">
+              Welcome back, <span className="text-[#EAE6F8] font-medium">{userName}</span>!
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           <a
-            href="/"
-            className="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all flex items-center gap-2"
+            href="/settings"
+            className="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4 4m4 4V4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </a>
+          <a
+            href="/"
+            className="text-sm font-medium text-[#A09CB8] hover:text-[#EAE6F8] transition-colors flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4 4m4-4V4" />
             </svg>
             Back to Home
           </a>

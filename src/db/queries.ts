@@ -242,4 +242,13 @@ export const userProfileDbService = {
       })
       .where(eq(schema.userProfiles.id, userId));
   },
+
+  /**
+   * Update user profile (name, subscription, etc.)
+   */
+  async update(userId: string, data: Partial<schema.NewUserProfile>) {
+    await db.update(schema.userProfiles)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(schema.userProfiles.id, userId));
+  },
 };

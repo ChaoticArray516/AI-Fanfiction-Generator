@@ -6,7 +6,7 @@
  */
 
 import { atom } from 'nanostores';
-import { storiesService, chaptersService, loreService } from './dataService';
+import { storiesService, chaptersService, loreService, isAuthenticated } from './dataService';
 
 // ============================================
 // Type Definitions
@@ -227,7 +227,12 @@ export async function loadStoryForWorkbench(storyId: string): Promise<void> {
       const firstChapter = chapters.sort((a, b) => a.order - b.order)[0];
       activeChapterStore.set(firstChapter);
     } else {
-      activeChapterStore.set(null);
+      // No chapters exist - for guest users, auto-create the first chapter
+      if (!isAuthenticated()) {
+        await addNewChapterToStory('Chapter 1');
+      } else {
+        activeChapterStore.set(null);
+      }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

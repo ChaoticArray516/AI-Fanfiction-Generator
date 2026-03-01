@@ -311,10 +311,24 @@ const title = "Settings - AI Fanfiction";
               <!-- Setting Row: Username -->
               <div class="flex flex-col md:flex-row md:items-center justify-between py-6 border-b border-[#3A3651] gap-4">
                 <div class="flex flex-col">
-                  <label class="text-sm font-bold text-[#EAE6F8] mb-1">Username</label>
-                  <span class="text-xs text-[#A09CB8]">Your unique identifier in the Guild.</span>
+                  <label class="text-sm font-bold text-[#EAE6F8] mb-1">Display Name</label>
+                  <span class="text-xs text-[#A09CB8]">This name will be displayed in your profile and across the app.</span>
                 </div>
-                <input type="text" value="Author_199X" class="input-field w-full md:w-64 rounded-lg px-3 py-2 text-sm">
+                <div class="flex items-center gap-3">
+                  <input
+                    type="text"
+                    id="profile-name-input"
+                    class="input-field w-full md:w-64 rounded-lg px-3 py-2 text-sm"
+                    placeholder="Enter your name"
+                  />
+                  <button
+                    id="save-name-btn"
+                    onclick="saveProfileName()"
+                    class="btn-primary px-4 py-2 rounded-lg text-xs whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
 
               <!-- Setting Row: Bio -->
@@ -493,10 +507,19 @@ const title = "Settings - AI Fanfiction";
                     </div>
                     <p class="text-sm text-[#A09CB8]">You're currently on the free tier with monthly credit resets.</p>
                   </div>
-                  <a href="/pricing" class="btn-primary px-6 py-2 rounded-lg text-sm flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-4 h-4"></i>
-                    Upgrade to Pro
-                  </a>
+                  <div class="flex gap-3">
+                    <a href="/pricing" class="btn-primary px-6 py-2 rounded-lg text-sm flex items-center gap-2">
+                      <i data-lucide="sparkles" class="w-4 h-4"></i>
+                      Upgrade to Pro
+                    </a>
+                    <a href="https://buy.stripe.com/your_test_link" target="_blank" rel="noopener noreferrer" class="btn-secondary px-6 py-2 rounded-lg text-sm flex items-center gap-2">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Manage Subscription
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -717,7 +740,87 @@ const title = "Settings - AI Fanfiction";
       // Load user data when page loads
       window.addEventListener('DOMContentLoaded', () => {
         loadUserData();
+        loadProfileName();
       });
+
+      // Load profile name
+      async function loadProfileName() {
+        try {
+          const response = await fetch('/api/user/profile');
+          if (response.ok) {
+            const data = await response.json();
+            const nameInput = document.getElementById('profile-name-input') as HTMLInputElement;
+            if (nameInput && data.name) {
+              nameInput.value = data.name;
+            }
+          }
+        } catch (error) {
+          console.error('Error loading profile name:', error);
+        }
+      }
+
+      // Save profile name
+      async function saveProfileName() {
+        const nameInput = document.getElementById('profile-name-input') as HTMLInputElement;
+        const saveBtn = document.getElementById('save-name-btn') as HTMLButtonElement;
+
+        if (!nameInput || !saveBtn) return;
+
+        const newName = nameInput.value.trim();
+
+        if (!newName) {
+          alert('Please enter a name');
+          return;
+        }
+
+        // Show loading state
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/user/profile', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: newName }),
+          });
+
+          if (response.ok) {
+            // Show success feedback
+            saveBtn.textContent = 'Saved!';
+            saveBtn.classList.remove('btn-primary');
+            saveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            // Update localStorage user data
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+              const user = JSON.parse(userStr);
+              user.name = newName;
+              localStorage.setItem('user', JSON.stringify(user));
+            }
+
+            // Reset button after 2 seconds
+            setTimeout(() => {
+              saveBtn.textContent = originalText;
+              saveBtn.disabled = false;
+              saveBtn.classList.add('btn-primary');
+              saveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }, 2000);
+          } else {
+            const error = await response.json();
+            alert('Failed to save name: ' + (error.error || 'Unknown error'));
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('Error saving profile name:', error);
+          alert('Failed to save name. Please try again.');
+          saveBtn.textContent = originalText;
+          saveBtn.disabled = false;
+        }
+      }
     </script>
   </body>
 </html>

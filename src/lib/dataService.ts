@@ -16,12 +16,23 @@ export type { Story, Chapter, LoreEntry } from './apiService';
 
 /**
  * Check if user is authenticated
- * In a real app, this would check the session or auth context
- * For now, we'll check if there's a user in localStorage (set by auth)
+ *
+ * Checks for user session by verifying:
+ * 1. User data in localStorage (set by auth system)
+ * 2. Session token in localStorage or cookies
+ *
+ * @returns true if user is authenticated, false otherwise
  */
-function isAuthenticated(): boolean {
+export function isAuthenticated(): boolean {
   try {
-    // Check for session token or user data
+    // Check for user object in localStorage (primary method)
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return !!(user && (user.id || user.email));
+    }
+
+    // Fallback: check for session token
     return !!localStorage.getItem('fanfic.session_token') ||
            !!document.cookie.includes('fanfic.session_token');
   } catch {

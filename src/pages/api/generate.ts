@@ -3,18 +3,22 @@ import { userProfileDbService } from '../../db/queries';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // 1. 认证检查
-    if (!locals.user?.id) {
+    const body = await request.json();
+    const { prompt, currentText, context, style, creativity, isGuest } = body;
+
+    console.log('Request body:', { prompt, style, creativity, isGuest });
+
+    // 验证必填字段
+    if (!prompt) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Please sign in' }),
+        JSON.stringify({ error: 'Prompt is required' }),
         {
-          status: 401,
+          status: 400,
           headers: { 'Content-Type': 'application/json' },
         }
       );
     }
 
-    const userId = locals.user.id;
     // 获取环境变量
     const apiKey = process.env.DEEPSEEK_API_KEY || import.meta.env.DEEPSEEK_API_KEY;
     const baseURL = process.env.DEEPSEEK_BASE_URL || import.meta.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
@@ -34,49 +38,64 @@ export const POST: APIRoute = async ({ request, locals }) => {
     console.log('API Key loaded:', apiKey.substring(0, 10) + '...');
     console.log('Base URL:', baseURL);
 
-    const body = await request.json();
-    const { prompt, currentText, context, style, creativity } = body;
-
-    console.log('Request body:', { prompt, style, creativity });
-
-    // 验证必填字段
-    if (!prompt) {
+    // 1. 认证检查 - 除非是游客请求
+    if (!isGuest && !locals.user?.id) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ error: 'Unauthorized - Please sign in' }),
         {
-          status: 400,
+          status: 401,
           headers: { 'Content-Type': 'application/json' },
         }
       );
     }
 
-    // 2. 检查用户点数
-    const CREDITS_PER_GENERATION = 100; // 每次生成消耗 100 点
-    const profile = await userProfileDbService.getByUserId(userId);
+    // 2. 检查用户点数（仅对已认证用户）
+    if (!isGuest) {
+      const userId = locals.user!.id;
+      const CREDITS_PER_GENERATION = 100; // 每次生成消耗 100 点
+      const profile = await userProfileDbService.getByUserId(userId);
 
-    if (!profile) {
-      return new Response(
-        JSON.stringify({ error: 'User profile not found' }),
-        {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
+      if (!profile) {
+        return new Response(
+          JSON.stringify({ error: 'User profile not found' }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
 
-    if (profile.credits < CREDITS_PER_GENERATION) {
-      return new Response(
-        JSON.stringify({
-          error: 'Insufficient credits',
-          message: `You need ${CREDITS_PER_GENERATION} credits to generate content. Your current balance: ${profile.credits}`,
-          currentCredits: profile.credits,
-          requiredCredits: CREDITS_PER_GENERATION,
-        }),
-        {
-          status: 402,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      if (profile.credits < CREDITS_PER_GENERATION) {
+        return new Response(
+          JSON.stringify({
+            error: 'Insufficient credits',
+            message: `You need ${CREDITS_PER_GENERATION} credits to generate content. Your current balance: ${profile.credits}`,
+            currentCredits: profile.credits,
+            requiredCredits: CREDITS_PER_GENERATION,
+          }),
+          {
+            status: 402,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      // 扣除点数（在调用 AI API 之前）
+      try {
+        await userProfileDbService.deductCredits(userId, CREDITS_PER_GENERATION);
+      } catch (error) {
+        // 如果扣除失败（例如并发请求导致的点数不足），返回 402
+        return new Response(
+          JSON.stringify({
+            error: 'Insufficient credits',
+            message: error instanceof Error ? error.message : 'Failed to deduct credits',
+          }),
+          {
+            status: 402,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
     }
 
     // 构建系统提示词
@@ -106,23 +125,6 @@ ${context ? `**Context**: ${context}` : ''}
     let userMessage = prompt;
     if (currentText) {
       userMessage = `Current story:\n${currentText}\n\n---\n\nContinue: ${prompt}`;
-    }
-
-    // 3. 扣除点数（在调用 AI API 之前）
-    try {
-      await userProfileDbService.deductCredits(userId, CREDITS_PER_GENERATION);
-    } catch (error) {
-      // 如果扣除失败（例如并发请求导致的点数不足），返回 402
-      return new Response(
-        JSON.stringify({
-          error: 'Insufficient credits',
-          message: error instanceof Error ? error.message : 'Failed to deduct credits',
-        }),
-        {
-          status: 402,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
     }
 
     // 调用 DeepSeek API

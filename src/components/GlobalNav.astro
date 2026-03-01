@@ -1,0 +1,216 @@
+---
+/**
+ * Global Navigation Component
+ *
+ * Provides a unified navigation bar that dynamically renders based on:
+ * - User authentication status (checked server-side)
+ * - User subscription tier (fetched client-side for authenticated users)
+ *
+ * States:
+ * - Guest: Features, Pricing, Community, Log in, Sign Up
+ * - Logged in (Free): Dashboard, Features, Pricing, Community, User dropdown with credits
+ * - Logged in (Pro): Dashboard, Features, Pricing, Community, User dropdown with Pro badge
+ */
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+
+// Server-side: Check if user is authenticated
+const isAuthenticated = !!Astro.locals.user?.id;
+const userName = Astro.locals.user?.name || 'User';
+---
+
+<!-- Navigation Bar -->
+<nav id="global-nav" class="fixed w-full z-50 top-0 left-0 border-b border-[#3A3651] bg-[#12101D]/80 backdrop-blur-md"
+     data-authenticated={isAuthenticated ? 'true' : 'false'}
+     data-username={userName}
+     data-current-path={currentPath}>
+
+  <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+    <!-- Logo -->
+    <div class="flex items-center gap-2">
+      <i data-lucide="feather" class="w-6 h-6 text-gradient bg-accent-gradient"
+         style="-webkit-background-clip: text; color: transparent;"></i>
+      <span class="font-bold text-lg tracking-wide">AI Fanfiction</span>
+    </div>
+
+    <!-- Navigation Links (Guest) -->
+    <div id="nav-links-guest" class="hidden md:flex items-center gap-6 font-medium text-sm">
+      <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
+      <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
+      <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
+    </div>
+
+    <!-- Navigation Links (Authenticated) -->
+    <div id="nav-links-authenticated" class="hidden md:flex items-center gap-6 font-medium text-sm">
+      <a href="/dashboard" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Dashboard</a>
+      <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
+      <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
+      <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
+    </div>
+
+    <!-- Right Side: Auth Buttons (Guest) -->
+    <div id="nav-buttons-guest" class="flex items-center gap-4">
+      <a href="/signin" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
+      <a href="/signup" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
+    </div>
+
+    <!-- Right Side: User Dropdown (Authenticated) -->
+    <div id="nav-user-dropdown" class="hidden relative">
+      <button id="user-menu-button" class="flex items-center gap-3 text-left hover:bg-[rgba(255,255,255,0.05)] px-3 py-2 rounded-lg transition-colors">
+        <!-- User Avatar -->
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+          <span class="text-sm font-bold text-white" id="user-avatar-text">U</span>
+        </div>
+
+        <!-- User Info -->
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-medium text-[#EAE6F8]" id="user-name">User</span>
+            <!-- Pro Badge (shown only for Pro users) -->
+            <span id="pro-badge" class="hidden px-2 py-0.5 text-[10px] font-bold bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full">PRO</span>
+          </div>
+          <span class="text-xs text-[#A09CB8]" id="user-credits">Loading...</span>
+        </div>
+
+        <!-- Chevron -->
+        <svg class="w-4 h-4 text-[#A09CB8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <!-- Dropdown Menu -->
+      <div id="user-dropdown-menu" class="hidden absolute right-0 top-full mt-2 w-48 bg-[#1C1929] border border-[#3A3651] rounded-lg shadow-lg py-2">
+        <a href="/settings" class="block px-4 py-2 text-sm text-[#EAE6F8] hover:bg-[rgba(255,255,255,0.05)] transition-colors">
+          Settings
+        </a>
+        <form action="/api/auth/signout" method="post" class="w-full">
+          <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-[#E05A5A] hover:bg-[rgba(224,90,90,0.1)] transition-colors">
+            Sign Out
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+  /* Dropdown Animation */
+  #user-dropdown-menu {
+    animation: fadeIn 0.15s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<script>
+  // Global Navigation Client Logic
+  document.addEventListener('DOMContentLoaded', () => {
+    const nav = document.getElementById('global-nav');
+    if (!nav) return;
+
+    const isAuthenticated = nav.getAttribute('data-authenticated') === 'true';
+    const userName = nav.getAttribute('data-username') || 'User';
+
+    // Show correct navigation based on auth state
+    const navLinksGuest = document.getElementById('nav-links-guest');
+    const navLinksAuthenticated = document.getElementById('nav-links-authenticated');
+    const navButtonsGuest = document.getElementById('nav-buttons-guest');
+    const navUserDropdown = document.getElementById('nav-user-dropdown');
+
+    if (isAuthenticated) {
+      // Show authenticated navigation
+      navLinksGuest?.classList.add('hidden');
+      navLinksAuthenticated?.classList.remove('hidden');
+      navButtonsGuest?.classList.add('hidden');
+      navUserDropdown?.classList.remove('hidden');
+
+      // Update user info
+      const userNameEl = document.getElementById('user-name');
+      const userAvatarText = document.getElementById('user-avatar-text');
+      if (userNameEl) userNameEl.textContent = userName;
+      if (userAvatarText) userAvatarText.textContent = userName.charAt(0).toUpperCase();
+
+      // Fetch subscription data
+      fetchSubscriptionData();
+    } else {
+      // Show guest navigation
+      navLinksGuest?.classList.remove('hidden');
+      navLinksAuthenticated?.classList.add('hidden');
+      navButtonsGuest?.classList.remove('hidden');
+      navUserDropdown?.classList.add('hidden');
+    }
+
+    // Setup user dropdown toggle
+    setupDropdown();
+
+    // Initialize icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+
+  // Fetch user subscription data
+  async function fetchSubscriptionData() {
+    try {
+      const response = await fetch('/api/user/subscription');
+      if (!response.ok) {
+        console.error('Failed to fetch subscription data');
+        return;
+      }
+
+      const data = await response.json();
+
+      // Update credits display
+      const creditsEl = document.getElementById('user-credits');
+      if (creditsEl) {
+        const credits = data.credits || 0;
+        creditsEl.textContent = `Credits: ${credits.toLocaleString()}`;
+      }
+
+      // Show Pro badge if user has Pro subscription
+      const proBadge = document.getElementById('pro-badge');
+      if (proBadge && data.subscription === 'pro') {
+        proBadge.classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+    }
+  }
+
+  // Setup user dropdown menu
+  function setupDropdown() {
+    const button = document.getElementById('user-menu-button');
+    const menu = document.getElementById('user-dropdown-menu');
+
+    if (!button || !menu) return;
+
+    // Toggle dropdown on click
+    button.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      menu.classList.toggle('hidden');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      menu.classList.add('hidden');
+    });
+
+    // Prevent dropdown from closing when clicking inside
+    menu.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+    });
+  }
+</script>
