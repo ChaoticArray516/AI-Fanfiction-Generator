@@ -37,29 +37,28 @@ const userName = Astro.locals.user?.name || 'User';
       <span class="font-bold text-lg tracking-wide">AI Fanfiction</span>
     </div>
 
-    <!-- Navigation Links (Guest) -->
-    <div id="nav-links-guest" class="hidden md:flex items-center gap-6 font-medium text-sm">
-      <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
-      <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
-      <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
-    </div>
+    <!-- Navigation Links -->
+    {isAuthenticated ? (
+      <!-- Authenticated Navigation -->
+      <div id="nav-links-authenticated" class="items-center gap-6 font-medium text-sm hidden md:flex">
+        <a href="/dashboard" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Dashboard</a>
+        <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
+        <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
+        <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
+      </div>
+    ) : (
+      <!-- Guest Navigation -->
+      <div id="nav-links-guest" class="items-center gap-6 font-medium text-sm hidden md:flex">
+        <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
+        <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
+        <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
+      </div>
+    )}
 
-    <!-- Navigation Links (Authenticated) -->
-    <div id="nav-links-authenticated" class="hidden md:flex items-center gap-6 font-medium text-sm">
-      <a href="/dashboard" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Dashboard</a>
-      <a href="/features" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Features</a>
-      <a href="/pricing" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Pricing</a>
-      <a href="/community" class="text-[#A09CB8] hover:text-[#EAE6F8] transition-colors">Community</a>
-    </div>
-
-    <!-- Right Side: Auth Buttons (Guest) -->
-    <div id="nav-buttons-guest" class="flex items-center gap-4">
-      <a href="/signin" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
-      <a href="/signup" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
-    </div>
-
-    <!-- Right Side: User Dropdown (Authenticated) -->
-    <div id="nav-user-dropdown" class="hidden relative">
+    <!-- Right Side Buttons -->
+    {isAuthenticated ? (
+      <!-- User Dropdown (Authenticated) -->
+      <div id="nav-user-dropdown" class="relative">
       <button id="user-menu-button" class="flex items-center gap-3 text-left hover:bg-[rgba(255,255,255,0.05)] px-3 py-2 rounded-lg transition-colors">
         <!-- User Avatar -->
         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
@@ -94,6 +93,13 @@ const userName = Astro.locals.user?.name || 'User';
         </form>
       </div>
     </div>
+    ) : (
+    <!-- Auth Buttons (Guest) -->
+    <div id="nav-buttons-guest" class="hidden md:flex items-center gap-4">
+      <a href="/signin" class="text-sm font-medium text-[#EAE6F8] hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#8A2BE2] hover:to-[#4A00E0] transition-all">Log in</a>
+      <a href="/signup" class="btn-primary px-5 py-2 rounded-lg text-sm inline-block">Sign Up</a>
+    </div>
+    )}
   </div>
 </nav>
 
@@ -117,6 +123,10 @@ const userName = Astro.locals.user?.name || 'User';
 
 <script>
   // Global Navigation Client Logic
+  declare const lucide: {
+    createIcons: () => void;
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     const nav = document.getElementById('global-nav');
     if (!nav) return;
@@ -131,12 +141,6 @@ const userName = Astro.locals.user?.name || 'User';
     const navUserDropdown = document.getElementById('nav-user-dropdown');
 
     if (isAuthenticated) {
-      // Show authenticated navigation
-      navLinksGuest?.classList.add('hidden');
-      navLinksAuthenticated?.classList.remove('hidden');
-      navButtonsGuest?.classList.add('hidden');
-      navUserDropdown?.classList.remove('hidden');
-
       // Update user info
       const userNameEl = document.getElementById('user-name');
       const userAvatarText = document.getElementById('user-avatar-text');
@@ -145,12 +149,6 @@ const userName = Astro.locals.user?.name || 'User';
 
       // Fetch subscription data
       fetchSubscriptionData();
-    } else {
-      // Show guest navigation
-      navLinksGuest?.classList.remove('hidden');
-      navLinksAuthenticated?.classList.add('hidden');
-      navButtonsGuest?.classList.remove('hidden');
-      navUserDropdown?.classList.add('hidden');
     }
 
     // Setup user dropdown toggle
