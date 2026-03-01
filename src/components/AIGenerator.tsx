@@ -69,7 +69,13 @@ export function AIGenerator({ onTextGenerated, initialText = '', lorebook = [] }
       }
     },
     onError: (error) => {
-      // 检查是否是点数不足错误 (402)
+      // Check for 401 Unauthorized - guest trying to access protected endpoint
+      if (error.message.includes('401')) {
+        setShowSignupModal(true);
+        return;
+      }
+
+      // Check for 402 Insufficient Credits
       if (error.message.includes('402') || error.message.includes('Insufficient credits')) {
         setShowUpgradeModal(true);
       }

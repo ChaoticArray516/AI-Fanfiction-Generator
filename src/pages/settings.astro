@@ -1,6 +1,11 @@
 ---
 const description = "Settings - AI Fanfiction Generator";
 const title = "Settings - AI Fanfiction";
+
+// Server-side authentication guard
+if (!Astro.locals.user?.id) {
+  return Astro.redirect('/signin');
+}
 ---
 
 <!doctype html>

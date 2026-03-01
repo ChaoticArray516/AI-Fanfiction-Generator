@@ -46,6 +46,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     name: session.user.name,
   } : null;
 
+  // Sync user state with localStorage for reliable auth checks
+  useEffect(() => {
+    if (user) {
+      // User is logged in - save to localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      // User is logged out - remove from localStorage
+      localStorage.removeItem('user');
+    }
+  }, [user]);
+
   return (
     <SessionContext.Provider
       value={{

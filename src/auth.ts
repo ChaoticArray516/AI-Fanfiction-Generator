@@ -80,31 +80,28 @@ export const auth = betterAuth({
 
   // Hooks to automatically initialize user profile after registration
   hooks: {
-    after: [
-      {
-        matcher: (context) => {
-          // Better-auth context structure check
-          const path = context.path || context.request?.url || '';
-          return path === '/sign-up/email';
-        },
-        handler: async (ctx) => {
-          // When email registration succeeds, create default user profile
-          const userId = ctx.context?.newSession?.user?.id;
-          if (userId) {
-            try {
-              // Check if profile already exists (for idempotency)
-              const existing = await userProfileDbService.getByUserId(userId);
-              if (!existing) {
-                await userProfileDbService.create(userId);
-                console.log('User profile created for user:', userId);
-              }
-            } catch (error) {
-              console.error('Failed to create user profile:', error);
+    after: async (context) => {
+      // Better-auth context structure check
+      const path = context.path || context.request?.url || '';
+
+      // Only execute for email registration
+      if (path === '/sign-up/email') {
+        // When email registration succeeds, create default user profile
+        const userId = context?.newSession?.user?.id;
+        if (userId) {
+          try {
+            // Check if profile already exists (for idempotency)
+            const existing = await userProfileDbService.getByUserId(userId);
+            if (!existing) {
+              await userProfileDbService.create(userId);
+              console.log('User profile created for user:', userId);
             }
+          } catch (error) {
+            console.error('Failed to create user profile:', error);
           }
-        },
-      },
-    ],
+        }
+      }
+    },
   },
 });
 
